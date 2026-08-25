@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* Charte PlanClic (extraite du Figma) */
+  --color-brand-dark: #155263;   /* bleu-vert foncé — textes, header actif */
+  --color-brand-accent: #ffc93c; /* jaune — boutons principaux */
+  --color-brand-light: #beced3;  /* bleu-gris clair — fonds secondaires */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-bagel: var(--font-bagel);
+
+  --color-brand-dark: var(--color-brand-dark);
+  --color-brand-accent: var(--color-brand-accent);
+  --color-brand-light: var(--color-brand-light);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Respecte les préférences d'accessibilité de l'utilisateur :
+   toutes les animations/transitions sont quasi instantanées. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Lien de nav avec soulignement animé au hover, sans changer la mise en page */
+.nav-underline {
+  position: relative;
+}
+.nav-underline::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 4px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 250ms ease;
+}
+.nav-underline:hover::after {
+  transform: scaleX(1);
+}
