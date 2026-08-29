@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/Toast";
 type Ligne = {
   cle: string;
   valeur: unknown;
-  public: boolean;
+  est_public: boolean;
   description: string | null;
   updated_at: string;
 };

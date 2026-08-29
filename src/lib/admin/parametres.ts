@@ -54,7 +54,7 @@ export async function getParametresPlateforme(): Promise<ParametresPlateforme> {
 export type ParametreLigne = {
   cle: string;
   valeur: unknown;
-  public: boolean;
+  est_public: boolean;
   description: string | null;
   updated_at: string;
 };
@@ -63,7 +63,7 @@ export async function getParametresBruts(): Promise<ParametreLigne[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("parametres_plateforme")
-    .select("cle, valeur, public, description, updated_at")
+    .select("cle, valeur, est_public, description, updated_at")
     .order("cle", { ascending: true });
   return (data ?? []) as ParametreLigne[];
 }

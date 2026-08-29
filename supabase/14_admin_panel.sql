@@ -366,7 +366,7 @@ grant execute on function public.admin_journaliser_impersonation(uuid, text) to 
 create table if not exists public.parametres_plateforme (
   cle text primary key,
   valeur jsonb not null default '{}'::jsonb,
-  public boolean not null default false,   -- true = lisible par anon/authenticated
+  est_public boolean not null default false,   -- true = lisible par anon/authenticated
   description text,
   updated_at timestamptz not null default now(),
   updated_by uuid references public.profiles(id)
@@ -376,7 +376,7 @@ alter table public.parametres_plateforme enable row level security;
 
 create policy "parametres_select_publics_ou_staff"
   on public.parametres_plateforme for select
-  using (public = true or public.current_role() in ('support', 'admin'));
+  using (est_public = true or public.current_role() in ('support', 'admin'));
 
 -- Aucune policy INSERT/UPDATE/DELETE : tout passe par admin_definir_parametre().
 
@@ -408,7 +408,7 @@ revoke all on function public.admin_definir_parametre(text, jsonb) from public;
 grant execute on function public.admin_definir_parametre(text, jsonb) to authenticated;
 
 -- Valeurs de départ (modifiables ensuite depuis /admin/parametres-plateforme).
-insert into public.parametres_plateforme (cle, valeur, public, description) values
+insert into public.parametres_plateforme (cle, valeur, est_public, description) values
   ('whatsapp_admin', '"212600000000"'::jsonb, true, 'Numéro WhatsApp officiel PlanClic (format international, sans +)'),
   ('lien_cgu', '"/cgu"'::jsonb, true, 'Lien vers les Conditions Générales d''Utilisation'),
   ('lien_confidentialite', '"/politique-confidentialite"'::jsonb, true, 'Lien vers la politique de confidentialité'),
