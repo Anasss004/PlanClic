@@ -2,6 +2,7 @@ import { MessageCircle, ChevronDown } from "lucide-react";
 import { completerProfilPro } from "@/app/actions/proprietaire";
 import FileUpload from "@/components/ui/FileUpload";
 import { lienWhatsAppAdmin } from "@/lib/whatsapp";
+import { getParametresPlateforme } from "@/lib/admin/parametres";
 
 const ERREURS: Record<string, string> = {
   "upload-rc": "Impossible d'envoyer le document du Registre de Commerce. Réessaie.",
@@ -20,6 +21,8 @@ export default async function InfosProfessionnellesPage({
   const messageWhatsApp =
     "Bonjour, je viens de m'inscrire sur PlanClic en tant que propriétaire. " +
     "Je vous envoie ci-joint mon Registre de Commerce et ma pièce d'identité pour vérification. Merci !";
+
+  const { whatsapp_admin } = await getParametresPlateforme();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-12">
@@ -109,7 +112,7 @@ export default async function InfosProfessionnellesPage({
             notre équipe les traite manuellement pour la vérification.
           </p>
           <a
-            href={lienWhatsAppAdmin(messageWhatsApp)}
+            href={lienWhatsAppAdmin(messageWhatsApp, whatsapp_admin)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-emerald-700"

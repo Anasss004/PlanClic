@@ -14,11 +14,14 @@ import {
   CalendarRange,
   BarChart3,
   Settings,
+  Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { seDeconnecter } from "@/app/actions/auth";
+import { getImpersonation } from "@/lib/impersonation";
 import NavLink from "@/components/proprietaire/NavLink";
 import MobileDrawer from "@/components/proprietaire/MobileDrawer";
+import BanniereImpersonation from "@/components/proprietaire/BanniereImpersonation";
 
 const NAV = [
   { href: "/proprietaire/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -27,6 +30,7 @@ const NAV = [
   { href: "/proprietaire/calendrier", label: "Calendrier", icon: CalendarRange },
   { href: "/proprietaire/statistiques", label: "Statistiques", icon: BarChart3 },
   { href: "/proprietaire/amendes", label: "Amendes", icon: TriangleAlert },
+  { href: "/proprietaire/notifications", label: "Notifications", icon: Bell },
   { href: "/proprietaire/parametres", label: "Paramètres", icon: Settings },
 ];
 
@@ -49,25 +53,37 @@ export default async function ProprietaireLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "proprietaire") {
+  if (!profile) redirect("/connexion");
+
+  const impersonation = await getImpersonation();
+
+  if (!impersonation && profile.role !== "proprietaire") {
     redirect("/dashboard");
   }
+
+  const proprietaireId = impersonation ? impersonation.proprietaireId : user.id;
 
   const { data: proprietaire } = await supabase
     .from("proprietaires")
     .select("statut_verification, nom_entreprise")
-    .eq("id", user.id)
+    .eq("id", proprietaireId)
     .single();
 
   if (!proprietaire) {
-    redirect("/inscription/infos-professionnelles");
+    redirect(impersonation ? "/admin/dashboard" : "/inscription/infos-professionnelles");
   }
 
   const { count: nbEnAttente } = await supabase
     .from("reservations")
     .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", user.id)
+    .eq("proprietaire_id", proprietaireId)
     .eq("statut", "en_attente");
+
+  const { count: nbNotifsNonLues } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("destinataire_id", proprietaireId)
+    .is("lu_le", null);
 
   const verifie = proprietaire.statut_verification === "verifie";
   const initiales = `${profile.prenom?.[0] ?? ""}${profile.nom?.[0] ?? ""}`.toUpperCase();
@@ -109,7 +125,13 @@ export default async function ProprietaireLayout({
               key={item.href}
               href={item.href}
               icon={<item.icon size={18} strokeWidth={1.75} />}
-              badge={item.href === "/proprietaire/reservations" ? nbEnAttente ?? 0 : undefined}
+              badge={
+                item.href === "/proprietaire/reservations"
+                  ? nbEnAttente ?? 0
+                  : item.href === "/proprietaire/notifications"
+                  ? nbNotifsNonLues ?? 0
+                  : undefined
+              }
             >
               {item.label}
             </NavLink>
@@ -170,6 +192,9 @@ export default async function ProprietaireLayout({
 
       {/* Contenu */}
       <div className="flex-1 lg:pl-64">
+        {impersonation && (
+          <BanniereImpersonation nomAgence={impersonation.nomAgence} />
+        )}
         {proprietaire.statut_verification !== "verifie" && (
           <div
             className={`flex items-center gap-2.5 border-b px-6 py-2.5 text-sm ${

@@ -10,6 +10,7 @@ import {
   FileWarning,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { resoudreProprietaireId } from "@/lib/impersonation";
 import StatCard from "@/components/ui/StatCard";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -27,11 +28,12 @@ export default async function DashboardProprietairePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { id: pid } = await resoudreProprietaireId(user!.id);
 
   const { data: proprietaire } = await supabase
     .from("proprietaires")
     .select("statut_verification")
-    .eq("id", user!.id)
+    .eq("id", pid)
     .single();
 
   const verifie = proprietaire?.statut_verification === "verifie";
@@ -39,18 +41,18 @@ export default async function DashboardProprietairePage() {
   const { count: nbVehicules } = await supabase
     .from("vehicules")
     .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", user!.id);
+    .eq("proprietaire_id", pid);
 
   const { count: nbEnAttente } = await supabase
     .from("reservations")
     .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .eq("statut", "en_attente");
 
   const { data: terminees } = await supabase
     .from("reservations")
     .select("prix_total")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .eq("statut", "terminee");
 
   const caTotal = terminees?.reduce((s, r) => s + (r.prix_total ?? 0), 0) ?? 0;
@@ -61,7 +63,7 @@ export default async function DashboardProprietairePage() {
   const { data: documentsAlerte } = await supabase
     .from("documents_vehicule")
     .select("id, type, date_expiration, vehicule_id, vehicules(marque, modele)")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .lte("date_expiration", dansTrenteJours.toISOString().slice(0, 10))
     .order("date_expiration", { ascending: true });
 
@@ -74,14 +76,14 @@ export default async function DashboardProprietairePage() {
   const { data: reservationsRecentes } = await supabase
     .from("reservations")
     .select("id, date_debut, date_fin, statut, created_at, vehicules(marque, modele), profiles(prenom, nom)")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .order("created_at", { ascending: false })
     .limit(5);
 
   const { data: reservationsAVenir } = await supabase
     .from("reservations")
     .select("id, date_debut, date_fin, vehicules(marque, modele), profiles(prenom, nom)")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .eq("statut", "confirmee")
     .gte("date_debut", new Date().toISOString().slice(0, 10))
     .order("date_debut", { ascending: true })

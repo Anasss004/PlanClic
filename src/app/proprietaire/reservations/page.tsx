@@ -1,5 +1,6 @@
 import { ClipboardList, Car, Calendar, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { resoudreProprietaireId } from "@/lib/impersonation";
 import ActionsReservation from "@/components/proprietaire/ActionsReservation";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
@@ -21,11 +22,12 @@ export default async function ReservationsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { id: pid } = await resoudreProprietaireId(user!.id);
 
   const { data: reservations } = await supabase
     .from("reservations")
     .select("id, date_debut, date_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, vehicule_id, client_id, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .order("created_at", { ascending: false });
 
   return (

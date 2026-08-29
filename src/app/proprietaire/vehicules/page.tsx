@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Car, Wrench, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { resoudreProprietaireId } from "@/lib/impersonation";
 import EmptyState from "@/components/ui/EmptyState";
 import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
 
@@ -9,24 +10,25 @@ export default async function VehiculesPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { id: pid } = await resoudreProprietaireId(user!.id);
 
   const { data: proprietaire } = await supabase
     .from("proprietaires")
     .select("statut_verification")
-    .eq("id", user!.id)
+    .eq("id", pid)
     .single();
 
   const { data: vehicules } = await supabase
     .from("vehicules")
     .select("*")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   const { data: reservationsTerminees } = await supabase
     .from("reservations")
     .select("vehicule_id, prix_total")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .eq("statut", "terminee");
 
   const revenuParVehicule = new Map<string, number>();

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { exigerStaffAction, exigerAdminAction } from "@/lib/admin/auth";
 
 export async function validerProprietaire(
   proprietaireId: string,
@@ -147,4 +148,109 @@ export async function assignerPlan(proprietaireId: string, planId: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/abonnements");
+  revalidatePath(`/admin/agences/${proprietaireId}`);
+}
+
+// ------------------------------------------------------------
+// Fiche agence — activer / désactiver un compte (suppression
+// logique réversible) et envoyer un message in-app.
+// ------------------------------------------------------------
+export async function definirActifAgence(proprietaireId: string, actif: boolean) {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_definir_actif_agence", {
+    p_proprietaire_id: proprietaireId,
+    p_actif: actif,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/agences/${proprietaireId}`);
+  revalidatePath("/admin/utilisateurs");
+}
+
+// ------------------------------------------------------------
+// Recherche globale (sidebar admin) — utilisateur / agence /
+// véhicule / réservation. Passe par la fonction SECURITY DEFINER
+// admin_recherche_globale() qui revérifie le rôle staff.
+// ------------------------------------------------------------
+export type ResultatRecherche = {
+  categorie: "agence" | "utilisateur" | "vehicule" | "reservation";
+  ref_id: string;
+  titre: string;
+  sous_titre: string;
+  lien: string;
+};
+
+export async function rechercheGlobaleAdmin(
+  terme: string
+): Promise<ResultatRecherche[]> {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_recherche_globale", {
+    p_terme: terme,
+  });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ResultatRecherche[];
+}
+
+export async function envoyerMessageProprietaire(
+  proprietaireId: string,
+  titre: string,
+  message: string
+) {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_notifier_proprietaire", {
+    p_proprietaire_id: proprietaireId,
+    p_titre: titre,
+    p_message: message,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/agences/${proprietaireId}`);
+}
+
+// ------------------------------------------------------------
+// Paramètres globaux de la plateforme — réservé admin (RPC
+// admin_definir_parametre revérifie aussi le rôle).
+// ------------------------------------------------------------
+export async function definirParametrePlateforme(cle: string, valeur: unknown) {
+  await exigerAdminAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_definir_parametre", {
+    p_cle: cle,
+    p_valeur: valeur,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/parametres-plateforme");
+}
+
+// ------------------------------------------------------------
+// Centre de notifications — diffusion d'une annonce (staff).
+// ------------------------------------------------------------
+export async function diffuserAnnonce(
+  titre: string,
+  message: string,
+  cible: "tous" | "plan",
+  filtrePlanId?: string
+): Promise<number> {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_diffuser_notification", {
+    p_titre: titre,
+    p_message: message,
+    p_cible: cible,
+    p_filtre_plan_id: filtrePlanId ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/annonces");
+  return (data as number) ?? 0;
 }

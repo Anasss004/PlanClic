@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Car, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import EmptyState from "@/components/ui/EmptyState";
@@ -16,14 +17,14 @@ export default async function AdminVehiculesPage() {
   // Regroupement par agence (propriétaire)
   const groupes = new Map<
     string,
-    { nomEntreprise: string; vehicules: NonNullable<typeof vehicules> }
+    { id: string; nomEntreprise: string; vehicules: NonNullable<typeof vehicules> }
   >();
 
   (vehicules ?? []).forEach((v) => {
     const proprietaire = Array.isArray(v.proprietaires) ? v.proprietaires[0] : v.proprietaires;
     const nom = proprietaire?.nom_entreprise ?? "Agence inconnue";
     if (!groupes.has(v.proprietaire_id)) {
-      groupes.set(v.proprietaire_id, { nomEntreprise: nom, vehicules: [] });
+      groupes.set(v.proprietaire_id, { id: v.proprietaire_id, nomEntreprise: nom, vehicules: [] });
     }
     groupes.get(v.proprietaire_id)!.vehicules.push(v);
   });
@@ -52,10 +53,15 @@ export default async function AdminVehiculesPage() {
       ) : (
         <div className="space-y-6">
           {agences.map((agence) => (
-            <div key={agence.nomEntreprise}>
+            <div key={agence.id}>
               <div className="mb-2 flex items-center gap-2 px-1">
                 <Building2 size={15} strokeWidth={1.75} className="text-dash-text-secondary" />
-                <p className="text-sm font-semibold text-dash-dark">{agence.nomEntreprise}</p>
+                <Link
+                  href={`/admin/agences/${agence.id}`}
+                  className="text-sm font-semibold text-dash-dark underline decoration-dash-border underline-offset-2 hover:decoration-dash-dark"
+                >
+                  {agence.nomEntreprise}
+                </Link>
                 <span className="text-xs text-dash-text-secondary">
                   ({agence.vehicules.length} véhicule{agence.vehicules.length > 1 ? "s" : ""})
                 </span>

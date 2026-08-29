@@ -14,9 +14,10 @@ export function construireLienWhatsApp(telephone: string, message: string): stri
 }
 
 // Numéro WhatsApp officiel de PlanClic pour la vérification temporaire
-// des documents d'agence — à configurer avec le vrai numéro via la
-// variable d'environnement NEXT_PUBLIC_WHATSAPP_ADMIN.
-export function lienWhatsAppAdmin(message: string): string {
-  const numero = process.env.NEXT_PUBLIC_WHATSAPP_ADMIN || "212600000000";
-  return `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
+// des documents d'agence. Le numéro se règle désormais depuis
+// /admin/parametres-plateforme (clé "whatsapp_admin") ; la variable
+// d'environnement NEXT_PUBLIC_WHATSAPP_ADMIN sert de repli.
+export function lienWhatsAppAdmin(message: string, numero?: string): string {
+  const num = numero || process.env.NEXT_PUBLIC_WHATSAPP_ADMIN || "212600000000";
+  return `https://wa.me/${num}?text=${encodeURIComponent(message)}`;
 }
