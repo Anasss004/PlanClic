@@ -47,7 +47,10 @@ export default function RechercheGlobale() {
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [terme, toast]);
+    // `toast` volontairement hors deps : son identité change à chaque
+    // rendu du provider et n'a aucune incidence ici.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terme]);
 
   useEffect(() => {
     function onClickExterieur(e: MouseEvent) {
