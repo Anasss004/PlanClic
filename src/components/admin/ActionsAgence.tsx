@@ -1,12 +1,52 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Ban, RotateCcw, Send, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Ban, Eye, RotateCcw, Send, X } from "lucide-react";
 import {
   definirActifAgence,
   envoyerMessageProprietaire,
 } from "@/app/actions/admin";
+import { demarrerImpersonation } from "@/app/actions/impersonation";
 import { useToast } from "@/components/ui/Toast";
+
+export function BoutonImpersonation({
+  proprietaireId,
+}: {
+  proprietaireId: string;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const toast = useToast();
+  const router = useRouter();
+
+  function lancer() {
+    if (
+      !confirm(
+        "Ouvrir l'espace de cette agence en lecture seule ? L'accès est journalisé."
+      )
+    )
+      return;
+    startTransition(async () => {
+      try {
+        await demarrerImpersonation(proprietaireId);
+        router.push("/proprietaire/dashboard");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Erreur.");
+      }
+    });
+  }
+
+  return (
+    <button
+      disabled={isPending}
+      onClick={lancer}
+      className="flex items-center gap-1.5 rounded-lg border border-dash-border px-4 py-2.5 text-xs font-semibold text-dash-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
+    >
+      <Eye size={13} strokeWidth={2} />
+      Se connecter en tant que
+    </button>
+  );
+}
 
 export function BoutonActifAgence({
   proprietaireId,

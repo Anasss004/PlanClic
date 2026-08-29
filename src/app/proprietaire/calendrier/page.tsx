@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarRange, SlidersHorizontal, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { resoudreProprietaireId } from "@/lib/impersonation";
 import EmptyState from "@/components/ui/EmptyState";
 
 const CATEGORIES = [
@@ -35,11 +36,12 @@ export default async function CalendrierPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { id: pid } = await resoudreProprietaireId(user!.id);
 
   let requeteVehicules = supabase
     .from("vehicules")
     .select("id, marque, modele, immatriculation, categorie")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .is("deleted_at", null);
   if (categorieActive) requeteVehicules = requeteVehicules.eq("categorie", categorieActive);
   const { data: vehicules } = await requeteVehicules.order("marque", { ascending: true });

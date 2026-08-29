@@ -21,6 +21,7 @@ import SelecteurPlan from "@/components/admin/SelecteurPlan";
 import { VoirDocument } from "@/components/admin/ActionsVerification";
 import {
   BoutonActifAgence,
+  BoutonImpersonation,
   BoutonMessageAgence,
 } from "@/components/admin/ActionsAgence";
 
@@ -202,6 +203,7 @@ export default async function FicheAgencePage({
           />
         </div>
         <BoutonActifAgence proprietaireId={id} actif={actif} />
+        <BoutonImpersonation proprietaireId={id} />
         <BoutonMessageAgence proprietaireId={id} />
       </div>
 

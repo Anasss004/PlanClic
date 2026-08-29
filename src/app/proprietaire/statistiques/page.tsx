@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet, Gauge, ClipboardList, Wrench, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { resoudreProprietaireId } from "@/lib/impersonation";
 import StatCard from "@/components/ui/StatCard";
 
 export default async function StatistiquesPage() {
@@ -8,10 +9,11 @@ export default async function StatistiquesPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { id: pid } = await resoudreProprietaireId(user!.id);
 
   // Restriction selon le plan : les statistiques avancées ne sont
   // pas incluses dans tous les plans.
-  const { data: plan } = await supabase.rpc("plan_actuel", { p_proprietaire_id: user!.id });
+  const { data: plan } = await supabase.rpc("plan_actuel", { p_proprietaire_id: pid });
   const accesAutorise = plan?.[0]?.acces_statistiques ?? false;
 
   if (!accesAutorise) {
@@ -47,7 +49,7 @@ export default async function StatistiquesPage() {
   const { data: vehicules } = await supabase
     .from("vehicules")
     .select("id")
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .is("deleted_at", null);
 
   const nbVehicules = vehicules?.length ?? 0;
@@ -55,7 +57,7 @@ export default async function StatistiquesPage() {
   const { data: toutesReservations } = await supabase
     .from("reservations")
     .select("statut, prix_total, date_debut, date_fin, created_at")
-    .eq("proprietaire_id", user!.id);
+    .eq("proprietaire_id", pid);
 
   const reservationsTerminees = (toutesReservations ?? []).filter((r) => r.statut === "terminee");
   const caTotal = reservationsTerminees.reduce((s, r) => s + (r.prix_total ?? 0), 0);
@@ -82,7 +84,7 @@ export default async function StatistiquesPage() {
   const { count: documentsARenouveler } = await supabase
     .from("documents_vehicule")
     .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", user!.id)
+    .eq("proprietaire_id", pid)
     .lte("date_expiration", new Date(aujourdhui.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
 
   // Revenu par mois (6 derniers mois)
