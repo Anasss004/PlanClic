@@ -28,30 +28,30 @@ export default async function RolesPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div>
+    <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-gray-900">
-          <KeyRound size={22} strokeWidth={1.75} />
+        <h1 className="flex items-center gap-2 text-[32px] font-bold tracking-tight text-dash-dark">
+          <KeyRound size={26} strokeWidth={1.75} />
           Gestion des rôles
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-dash-text-secondary">
           Réservé aux administrateurs. Chaque changement est journalisé.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="overflow-hidden rounded-xl border border-dash-border bg-white shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
         {utilisateurs?.map((u, i) => (
           <div
             key={u.id}
             className={`flex items-center justify-between px-5 py-4 ${
-              i !== 0 ? "border-t border-gray-100" : ""
+              i !== 0 ? "border-t border-dash-border" : ""
             }`}
           >
             <div>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-dash-text">
                 {u.prenom} {u.nom}
               </p>
-              <p className="text-xs text-gray-500">{u.email}</p>
+              <p className="text-xs text-dash-text-secondary">{u.email}</p>
             </div>
             <SelecteurRole userId={u.id} roleActuel={u.role} />
           </div>

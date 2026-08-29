@@ -3,11 +3,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { validerFichier } from "@/lib/validation-fichiers";
 
 // Génère un chemin de stockage non prévisible, jamais basé sur
 // nom/CIN/tel/email — conforme aux règles de sécurité du projet.
-function cheminAleatoire(userId: string, fichier: File) {
-  const extension = fichier.name.split(".").pop();
+// L'extension vient du type réel détecté (magic bytes), jamais du nom
+// de fichier fourni par le client.
+function cheminAleatoire(userId: string, mime: string) {
+  const extension = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : "jpg";
   return `${userId}/${crypto.randomUUID()}.${extension}`;
 }
 
@@ -29,26 +32,53 @@ export async function completerProfilPro(formData: FormData) {
   const ville = formData.get("ville") as string;
   const adresse = formData.get("adresse") as string;
   const registre_commerce = formData.get("registre_commerce") as string;
-  const fichierRC = formData.get("document_rc") as File;
-  const fichierID = formData.get("document_id") as File;
+  const fichierRC = formData.get("document_rc") as File | null;
+  const fichierID = formData.get("document_id") as File | null;
 
-  // 1. Upload des documents vers le bucket privé
-  const cheminRC = cheminAleatoire(user.id, fichierRC);
-  const { error: erreurUploadRC } = await supabase.storage
-    .from("documents-prives")
-    .upload(cheminRC, fichierRC);
+  // Upload optionnel — solution temporaire en attendant la finalisation
+  // du dossier CNDP : la méthode recommandée est l'envoi par WhatsApp
+  // (voir bouton dédié sur la page), donc ces fichiers peuvent être vides.
+  const documentsAInserer: {
+    owner_id: string;
+    type_document: string;
+    storage_path: string;
+    proprietaire_id: string;
+  }[] = [];
 
-  if (erreurUploadRC) {
-    redirect("/inscription/infos-professionnelles?erreur=upload-rc");
+  if (fichierRC && fichierRC.size > 0) {
+    const validationRC = await validerFichier(fichierRC, ["image/jpeg", "image/png", "application/pdf"]);
+    if (!validationRC.valide) {
+      redirect("/inscription/infos-professionnelles?erreur=upload-rc");
+    }
+    const cheminRC = cheminAleatoire(user.id, fichierRC.type);
+    const { error } = await supabase.storage.from("documents-prives").upload(cheminRC, fichierRC);
+    if (error) {
+      redirect("/inscription/infos-professionnelles?erreur=upload-rc");
+    }
+    documentsAInserer.push({
+      owner_id: user.id,
+      type_document: "registre_commerce",
+      storage_path: cheminRC,
+      proprietaire_id: user.id,
+    });
   }
 
-  const cheminID = cheminAleatoire(user.id, fichierID);
-  const { error: erreurUploadID } = await supabase.storage
-    .from("documents-prives")
-    .upload(cheminID, fichierID);
-
-  if (erreurUploadID) {
-    redirect("/inscription/infos-professionnelles?erreur=upload-id");
+  if (fichierID && fichierID.size > 0) {
+    const validationID = await validerFichier(fichierID, ["image/jpeg", "image/png", "application/pdf"]);
+    if (!validationID.valide) {
+      redirect("/inscription/infos-professionnelles?erreur=upload-id");
+    }
+    const cheminID = cheminAleatoire(user.id, fichierID.type);
+    const { error } = await supabase.storage.from("documents-prives").upload(cheminID, fichierID);
+    if (error) {
+      redirect("/inscription/infos-professionnelles?erreur=upload-id");
+    }
+    documentsAInserer.push({
+      owner_id: user.id,
+      type_document: "id_gerant",
+      storage_path: cheminID,
+      proprietaire_id: user.id,
+    });
   }
 
   // 2. Création de la fiche propriétaire (statut "en_attente" par défaut)
@@ -67,21 +97,11 @@ export async function completerProfilPro(formData: FormData) {
     redirect("/inscription/infos-professionnelles?erreur=creation-profil");
   }
 
-  // 3. Référence des documents (jamais le fichier lui-même en base)
-  await supabase.from("documents").insert([
-    {
-      owner_id: user.id,
-      type_document: "registre_commerce",
-      storage_path: cheminRC,
-      proprietaire_id: user.id,
-    },
-    {
-      owner_id: user.id,
-      type_document: "id_gerant",
-      storage_path: cheminID,
-      proprietaire_id: user.id,
-    },
-  ]);
+  // 3. Référence des documents (jamais le fichier lui-même en base) —
+  // uniquement s'il y en a (upload optionnel, cf. WhatsApp ci-dessus)
+  if (documentsAInserer.length > 0) {
+    await supabase.from("documents").insert(documentsAInserer);
+  }
 
   redirect("/proprietaire/dashboard");
 }
@@ -99,12 +119,31 @@ export async function ajouterVehicule(formData: FormData) {
 
   if (!user) redirect("/connexion");
 
+  // Restriction selon le plan (feature gating) : vérifie que le
+  // propriétaire n'a pas atteint la limite de véhicules de son plan.
+  const { data: plan } = await supabase.rpc("plan_actuel", { p_proprietaire_id: user.id });
+  const limiteVehicules = plan?.[0]?.max_vehicules;
+
+  if (limiteVehicules != null) {
+    const { count: nbVehiculesActuels } = await supabase
+      .from("vehicules")
+      .select("*", { count: "exact", head: true })
+      .eq("proprietaire_id", user.id)
+      .is("deleted_at", null);
+
+    if ((nbVehiculesActuels ?? 0) >= limiteVehicules) {
+      redirect("/proprietaire/vehicules/nouveau?erreur=limite-plan");
+    }
+  }
+
   const photos = formData.getAll("photos") as File[];
   const cheminsPhotos: string[] = [];
 
   for (const photo of photos) {
     if (photo.size === 0) continue;
-    const chemin = cheminAleatoire(user.id, photo);
+    const validation = await validerFichier(photo, ["image/jpeg", "image/png"]);
+    if (!validation.valide) continue; // fichier ignoré silencieusement, non bloquant pour le reste
+    const chemin = cheminAleatoire(user.id, photo.type);
     const { error } = await supabase.storage
       .from("photos-vehicules")
       .upload(chemin, photo);
@@ -130,6 +169,7 @@ export async function ajouterVehicule(formData: FormData) {
     prix_jour: Number(formData.get("prix_jour")),
     ville: formData.get("ville") as string,
     photos: cheminsPhotos,
+    categorie: (formData.get("categorie") as string) || null,
     km_inclus_jour: formData.get("km_inclus_jour") ? Number(formData.get("km_inclus_jour")) : null,
     age_minimum: formData.get("age_minimum") ? Number(formData.get("age_minimum")) : null,
     anciennete_permis_mois: formData.get("anciennete_permis_mois") ? Number(formData.get("anciennete_permis_mois")) : null,
@@ -231,6 +271,36 @@ export async function signalerAmende(formData: FormData) {
 // ------------------------------------------------------------
 export async function modifierVehicule(vehiculeId: string, formData: FormData) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
+  // Upload des nouvelles photos éventuelles — ajoutées à celles déjà
+  // en place, jamais un remplacement destructeur.
+  const nouvellesPhotos = formData.getAll("photos") as File[];
+  const cheminsAjoutes: string[] = [];
+  for (const photo of nouvellesPhotos) {
+    if (photo.size === 0) continue;
+    const validation = await validerFichier(photo, ["image/jpeg", "image/png"]);
+    if (!validation.valide) continue;
+    const chemin = cheminAleatoire(user.id, photo.type);
+    const { error } = await supabase.storage.from("photos-vehicules").upload(chemin, photo);
+    if (!error) {
+      const { data } = supabase.storage.from("photos-vehicules").getPublicUrl(chemin);
+      cheminsAjoutes.push(data.publicUrl);
+    }
+  }
+
+  let photosFinales: string[] | undefined;
+  if (cheminsAjoutes.length > 0) {
+    const { data: vehiculeActuel } = await supabase
+      .from("vehicules")
+      .select("photos")
+      .eq("id", vehiculeId)
+      .single();
+    photosFinales = [...(vehiculeActuel?.photos ?? []), ...cheminsAjoutes];
+  }
 
   const { error } = await supabase
     .from("vehicules")
@@ -254,6 +324,7 @@ export async function modifierVehicule(vehiculeId: string, formData: FormData) {
       anciennete_permis_mois: formData.get("anciennete_permis_mois")
         ? Number(formData.get("anciennete_permis_mois"))
         : null,
+      ...(photosFinales ? { photos: photosFinales } : {}),
     })
     .eq("id", vehiculeId);
 
@@ -395,4 +466,34 @@ export async function annulerBlocage(reservationId: string, vehiculeId: string) 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
+}
+
+// ------------------------------------------------------------
+// Modifier les informations générales de l'agence (nom, ville,
+// adresse, spécialité). Le statut de vérification n'est jamais
+// modifiable par cette voie (RLS + trigger l'interdisent déjà).
+// ------------------------------------------------------------
+export async function modifierProprietaire(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
+  const { error } = await supabase
+    .from("proprietaires")
+    .update({
+      nom_entreprise: formData.get("nom_entreprise") as string,
+      ville: formData.get("ville") as string,
+      adresse: formData.get("adresse") as string,
+      specialite: formData.get("specialite") as string,
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    redirect("/proprietaire/parametres?erreur=modification");
+  }
+
+  revalidatePath("/proprietaire/parametres");
+  redirect("/proprietaire/parametres?message=enregistre");
 }

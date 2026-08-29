@@ -1,5 +1,6 @@
 import { ajouterVehicule } from "@/app/actions/proprietaire";
 import ImmatriculationInput from "@/components/ui/ImmatriculationInput";
+import FileUpload from "@/components/ui/FileUpload";
 
 export default async function NouveauVehiculePage({
   searchParams,
@@ -14,10 +15,20 @@ export default async function NouveauVehiculePage({
         Ajouter un véhicule
       </h1>
 
-      {params.erreur && (
-        <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-          Impossible d&apos;ajouter ce véhicule. Vérifie les champs.
+      {params.erreur === "limite-plan" ? (
+        <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Tu as atteint le nombre maximum de véhicules inclus dans ton plan
+          actuel.{" "}
+          <a href="/proprietaire/parametres" className="underline">
+            Voir mon plan
+          </a>
         </p>
+      ) : (
+        params.erreur && (
+          <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+            Impossible d&apos;ajouter ce véhicule. Vérifie les champs.
+          </p>
+        )
       )}
 
       <form
@@ -37,6 +48,16 @@ export default async function NouveauVehiculePage({
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Ville</label>
             <input name="ville" required className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900" />
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-brand-dark">Catégorie (optionnel)</label>
+          <select name="categorie" defaultValue="" className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-brand-dark">
+            <option value="">Non précisée</option>
+            <option value="economique">Économique</option>
+            <option value="berline_luxe">Berline Luxe</option>
+            <option value="suv_4x4">SUV & 4x4</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -115,14 +136,14 @@ export default async function NouveauVehiculePage({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dashed border-gray-200 p-4">
+        <div>
           <label className="mb-1 block text-sm font-semibold text-brand-dark">
             Photos du véhicule
           </label>
           <p className="mb-2 text-xs text-[#6a6a6a]">
             Ces photos seront visibles publiquement sur l&apos;annonce.
           </p>
-          <input type="file" name="photos" accept="image/*" multiple className="w-full text-sm" />
+          <FileUpload name="photos" accept="image/*" multiple theme="brand" />
         </div>
 
         <button

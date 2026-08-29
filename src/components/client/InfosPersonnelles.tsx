@@ -1,4 +1,5 @@
 import { modifierProfil } from "@/app/actions/client";
+import DatePicker from "@/components/ui/DatePicker";
 
 export default function InfosPersonnelles({ profile }: { profile: any }) {
   return (
@@ -52,12 +53,7 @@ export default function InfosPersonnelles({ profile }: { profile: any }) {
             <label className="mb-1 block text-xs font-medium text-gray-500">
               Date de naissance
             </label>
-            <input
-              type="date"
-              name="date_naissance"
-              defaultValue={profile.date_naissance ?? ""}
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark"
-            />
+            <DatePicker name="date_naissance" defaultValue={profile.date_naissance ?? ""} theme="brand" />
           </div>
         </div>
 

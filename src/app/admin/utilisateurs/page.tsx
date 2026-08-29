@@ -12,12 +12,12 @@ export default async function UtilisateursPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div>
+    <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
           Utilisateurs
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-dash-text-secondary">
           {utilisateurs?.length ?? 0} compte(s) au total.
         </p>
       </div>
@@ -29,10 +29,10 @@ export default async function UtilisateursPage() {
           description="Les comptes créés sur la plateforme apparaîtront ici."
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+        <div className="overflow-x-auto rounded-xl border border-dash-border bg-white shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500">
+              <tr className="border-b border-dash-border bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-dash-text-secondary">
                 <th className="px-5 py-3">Nom</th>
                 <th className="px-5 py-3">Email</th>
                 <th className="px-5 py-3">Téléphone</th>
@@ -41,12 +41,12 @@ export default async function UtilisateursPage() {
             </thead>
             <tbody>
               {utilisateurs.map((u) => (
-                <tr key={u.id} className="border-b border-gray-50 last:border-0">
-                  <td className="px-5 py-3 font-medium text-gray-900">
+                <tr key={u.id} className="border-b border-dash-border last:border-0">
+                  <td className="px-5 py-3 font-medium text-dash-text">
                     {u.prenom} {u.nom}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{u.email}</td>
-                  <td className="px-5 py-3 text-gray-500">{u.telephone ?? "—"}</td>
+                  <td className="px-5 py-3 text-dash-text-secondary">{u.email}</td>
+                  <td className="px-5 py-3 text-dash-text-secondary">{u.telephone ?? "—"}</td>
                   <td className="px-5 py-3">
                     <Badge
                       variant={

@@ -13,6 +13,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import ProfileMenu from "@/components/ProfileMenu";
+import DatePicker from "@/components/ui/DatePicker";
 import { VILLES } from "@/lib/villes";
 
 type Profile = { prenom: string; nom: string; role: string } | null;
@@ -103,17 +104,17 @@ export default function EnTeteRecherche({
                 </option>
               ))}
             </select>
-            <input
-              type="date"
+            <DatePicker
               value={dateDebutEdit}
-              onChange={(e) => setDateDebutEdit(e.target.value)}
-              className="rounded-full px-2 py-1 text-sm text-brand-dark outline-none"
+              onChange={setDateDebutEdit}
+              theme="brand"
+              className="w-40"
             />
-            <input
-              type="date"
+            <DatePicker
               value={dateFinEdit}
-              onChange={(e) => setDateFinEdit(e.target.value)}
-              className="rounded-full px-2 py-1 text-sm text-brand-dark outline-none"
+              onChange={setDateFinEdit}
+              theme="brand"
+              className="w-40"
             />
             <button
               onClick={soumettreRecherche}

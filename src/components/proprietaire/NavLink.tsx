@@ -20,19 +20,16 @@ export default function NavLink({
   return (
     <Link
       href={href}
-      className={`relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+      className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition ${
         isActive
-          ? "bg-white/10 text-white"
-          : "text-white/65 hover:bg-white/5 hover:text-white"
+          ? "border-r-2 border-dash-accent bg-dash-dark font-bold text-dash-accent"
+          : "font-normal text-dash-muted hover:bg-white/5"
       }`}
     >
-      {isActive && (
-        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand-accent" />
-      )}
       {icon}
       <span className="flex-1">{children}</span>
       {!!badge && badge > 0 && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-accent px-1.5 text-[11px] font-bold text-brand-dark">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-dash-accent px-1.5 text-[11px] font-bold text-dash-dark">
           {badge}
         </span>
       )}

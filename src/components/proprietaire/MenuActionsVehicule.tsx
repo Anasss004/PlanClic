@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical, Pencil, Eye, EyeOff, Eye as EyeOn, Trash2 } from "lucide-react";
 import { basculerStatutVehicule, supprimerVehicule } from "@/app/actions/proprietaire";
+import { useToast } from "@/components/ui/Toast";
 
 export default function MenuActionsVehicule({
   vehiculeId,
@@ -16,6 +17,7 @@ export default function MenuActionsVehicule({
   const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     function fermerSiExterieur(e: MouseEvent) {
@@ -40,9 +42,10 @@ export default function MenuActionsVehicule({
     startTransition(async () => {
       try {
         await basculerStatutVehicule(vehiculeId, statut);
+        toast.success(statut === "actif" ? "Véhicule désactivé." : "Véhicule réactivé.");
         router.refresh();
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }
@@ -53,9 +56,10 @@ export default function MenuActionsVehicule({
     startTransition(async () => {
       try {
         await supprimerVehicule(vehiculeId);
+        toast.success("Véhicule supprimé.");
         router.refresh();
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }

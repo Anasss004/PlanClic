@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { changerStatutVehicule } from "@/app/actions/admin";
+import { useToast } from "@/components/ui/Toast";
 
 export default function ToggleVehicule({
   vehiculeId,
@@ -11,14 +12,16 @@ export default function ToggleVehicule({
   statutActuel: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function basculer() {
     const nouveau = statutActuel === "actif" ? "inactif" : "actif";
     startTransition(async () => {
       try {
         await changerStatutVehicule(vehiculeId, nouveau);
+        toast.success(nouveau === "actif" ? "Véhicule réactivé." : "Véhicule désactivé.");
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }

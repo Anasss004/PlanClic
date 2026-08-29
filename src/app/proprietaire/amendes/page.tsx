@@ -4,6 +4,7 @@ import { signalerAmende } from "@/app/actions/proprietaire";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import ImmatriculationInput from "@/components/ui/ImmatriculationInput";
+import DatePicker from "@/components/ui/DatePicker";
 
 export default async function AmendesPage({
   searchParams,
@@ -49,12 +50,7 @@ export default async function AmendesPage({
             <label className="mb-1 block text-xs font-medium text-gray-500">
               Date de l&apos;amende
             </label>
-            <input
-              type="date"
-              name="date_amende"
-              required
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark"
-            />
+            <DatePicker name="date_amende" required theme="brand" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-500">

@@ -43,9 +43,21 @@ export default function Footer() {
             <ul className="space-y-1 text-sm text-brand-dark">
               <li className="w-fit cursor-pointer transition-colors hover:text-brand-dark/70">Contactez-nous</li>
               <li className="w-fit cursor-pointer transition-colors hover:text-brand-dark/70">FAQ</li>
-              <li className="w-fit cursor-pointer transition-colors hover:text-brand-dark/70">Conditions Générales d&apos;Utilisation</li>
-              <li className="w-fit cursor-pointer transition-colors hover:text-brand-dark/70">Politique de Confidentialité</li>
-              <li className="w-fit cursor-pointer transition-colors hover:text-brand-dark/70">Mentions Légales</li>
+              <li>
+                <Link href="/cgu" className="transition-colors hover:text-brand-dark/70">
+                  Conditions Générales d&apos;Utilisation
+                </Link>
+              </li>
+              <li>
+                <Link href="/politique-confidentialite" className="transition-colors hover:text-brand-dark/70">
+                  Politique de Confidentialité
+                </Link>
+              </li>
+              <li>
+                <Link href="/mentions-legales" className="transition-colors hover:text-brand-dark/70">
+                  Mentions Légales
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -91,8 +103,9 @@ export default function Footer() {
       </div>
 
       <div className="bg-brand-dark py-3 text-center text-sm text-white">
-        © 2026 PlanClic. Tous droits réservés. | Conditions Générales |
-        Politique de Confidentialité | Cookies
+        © 2026 PlanClic. Tous droits réservés. |{" "}
+        <Link href="/cgu" className="hover:underline">Conditions Générales</Link> |{" "}
+        <Link href="/politique-confidentialite" className="hover:underline">Politique de Confidentialité</Link>
       </div>
     </footer>
   );

@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { annulerBlocage } from "@/app/actions/proprietaire";
+import { useToast } from "@/components/ui/Toast";
 
 export default function AnnulerBlocageButton({
   reservationId,
@@ -11,14 +12,16 @@ export default function AnnulerBlocageButton({
   vehiculeId: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function annuler() {
     if (!confirm("Débloquer ces dates ?")) return;
     startTransition(async () => {
       try {
         await annulerBlocage(reservationId, vehiculeId);
+        toast.success("Blocage annulé.");
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }

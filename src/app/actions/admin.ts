@@ -81,3 +81,70 @@ export async function obtenirUrlDocumentSigne(storagePath: string) {
 
   return data.signedUrl;
 }
+
+// ------------------------------------------------------------
+// Gestion des plans (SaaS) — CRUD réservé aux vrais admin
+// ------------------------------------------------------------
+export async function creerPlan(formData: FormData) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("plans").insert({
+    nom: formData.get("nom") as string,
+    description: (formData.get("description") as string) || null,
+    prix: Number(formData.get("prix")),
+    periode: formData.get("periode") as string,
+    max_vehicules: formData.get("max_vehicules") ? Number(formData.get("max_vehicules")) : null,
+    acces_statistiques: formData.get("acces_statistiques") === "on",
+    mise_en_avant: formData.get("mise_en_avant") === "on",
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/plans");
+}
+
+export async function modifierPlan(planId: string, formData: FormData) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("plans")
+    .update({
+      nom: formData.get("nom") as string,
+      description: (formData.get("description") as string) || null,
+      prix: Number(formData.get("prix")),
+      periode: formData.get("periode") as string,
+      max_vehicules: formData.get("max_vehicules") ? Number(formData.get("max_vehicules")) : null,
+      acces_statistiques: formData.get("acces_statistiques") === "on",
+      mise_en_avant: formData.get("mise_en_avant") === "on",
+    })
+    .eq("id", planId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/plans");
+}
+
+export async function basculerPlanActif(planId: string, actifActuel: boolean) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("plans")
+    .update({ actif: !actifActuel })
+    .eq("id", planId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/plans");
+}
+
+// ------------------------------------------------------------
+// Attribution manuelle d'un plan à un propriétaire
+// ------------------------------------------------------------
+export async function assignerPlan(proprietaireId: string, planId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_assigner_plan", {
+    p_proprietaire_id: proprietaireId,
+    p_plan_id: planId,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/abonnements");
+}

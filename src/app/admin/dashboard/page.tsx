@@ -47,16 +47,17 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard icon={Users} label="Clients inscrits" value={nbClients ?? 0} />
-        <StatCard icon={Building2} label="Propriétaires" value={nbProprietaires ?? 0} />
+        <StatCard icon={Users} label="Clients inscrits" value={nbClients ?? 0} variant="blue" />
+        <StatCard icon={Building2} label="Propriétaires" value={nbProprietaires ?? 0} variant="gray" />
         <StatCard
           icon={ShieldCheck}
           label="Comptes en attente"
           value={nbEnAttente ?? 0}
           hint={nbEnAttente ? "Nécessite ton attention" : undefined}
+          variant="gold"
         />
-        <StatCard icon={Car} label="Véhicules publiés" value={nbVehicules ?? 0} />
-        <StatCard icon={ClipboardList} label="Réservations" value={nbReservations ?? 0} />
+        <StatCard icon={Car} label="Véhicules publiés" value={nbVehicules ?? 0} variant="gray" />
+        <StatCard icon={ClipboardList} label="Réservations" value={nbReservations ?? 0} variant="blue" />
         <StatCard
           icon={Wallet}
           label="CA plateforme (total)"

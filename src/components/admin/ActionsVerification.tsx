@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Check, X, ExternalLink } from "lucide-react";
 import { validerProprietaire, obtenirUrlDocumentSigne } from "@/app/actions/admin";
+import { useToast } from "@/components/ui/Toast";
 
 export default function ActionsVerificationProprietaire({
   proprietaireId,
@@ -10,13 +11,15 @@ export default function ActionsVerificationProprietaire({
   proprietaireId: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function decider(decision: "verifie" | "rejete") {
     startTransition(async () => {
       try {
         await validerProprietaire(proprietaireId, decision);
+        toast.success(decision === "verifie" ? "Compte validé." : "Compte rejeté.");
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }
@@ -26,7 +29,7 @@ export default function ActionsVerificationProprietaire({
       <button
         disabled={isPending}
         onClick={() => decider("verifie")}
-        className="flex items-center gap-1.5 rounded-lg bg-brand-dark px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg bg-dash-sidebar px-4 py-2.5 text-xs font-semibold text-dash-muted transition hover:opacity-90 disabled:opacity-50"
       >
         <Check size={13} strokeWidth={2} />
         Valider
@@ -34,7 +37,7 @@ export default function ActionsVerificationProprietaire({
       <button
         disabled={isPending}
         onClick={() => decider("rejete")}
-        className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg border border-dash-border px-4 py-2.5 text-xs font-medium text-dash-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
       >
         <X size={13} strokeWidth={2} />
         Rejeter
@@ -44,19 +47,21 @@ export default function ActionsVerificationProprietaire({
 }
 
 export function VoirDocument({ storagePath }: { storagePath: string }) {
+  const toast = useToast();
+
   async function ouvrir() {
     try {
       const url = await obtenirUrlDocumentSigne(storagePath);
       window.open(url, "_blank");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Impossible d'ouvrir le document.");
+      toast.error(e instanceof Error ? e.message : "Impossible d'ouvrir le document.");
     }
   }
 
   return (
     <button
       onClick={ouvrir}
-      className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dash-border px-3 py-2 text-xs font-medium text-dash-text-secondary transition hover:bg-gray-50"
     >
       <ExternalLink size={13} strokeWidth={1.75} />
       Voir le document

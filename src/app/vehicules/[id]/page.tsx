@@ -1,10 +1,17 @@
-import { Car, Bike, Truck, MapPin, Fuel, Gauge, Users, DoorOpen } from "lucide-react";
+import { Car, Bike, Truck, MapPin, Fuel, Gauge, Users, DoorOpen, ShieldCheck, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { creerReservation } from "@/app/actions/client";
+import Reveal from "@/components/motion/Reveal";
+import FormulaireReservation from "@/components/ReservationForm";
 
 const ICONES_TYPE = { voiture: Car, moto: Bike, utilitaire: Truck } as const;
+
+const LABELS_TYPE: Record<string, string> = {
+  voiture: "Voiture",
+  moto: "Moto",
+  utilitaire: "Utilitaire",
+};
 
 const ERREURS: Record<string, string> = {
   "reserve-aux-clients": "Seuls les comptes clients peuvent réserver un véhicule.",
@@ -52,66 +59,104 @@ export default async function VehiculeDetailPage({
 
   const Icon = ICONES_TYPE[vehicule.type as keyof typeof ICONES_TYPE] ?? Car;
 
+  const conditions = [
+    vehicule.km_inclus_jour ? `${vehicule.km_inclus_jour} km/jour inclus` : null,
+    vehicule.anciennete_permis_mois
+      ? `Permis depuis ${Math.max(1, Math.round(vehicule.anciennete_permis_mois / 12))} an(s) minimum`
+      : null,
+    vehicule.age_minimum ? `Âge minimum ${vehicule.age_minimum} ans` : null,
+  ].filter(Boolean) as string[];
+
   return (
     <>
       <Header />
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+        {/* Fil d'Ariane */}
+        <p className="mb-4 flex items-center gap-1.5 text-xs text-brand-dark/70">
+          <MapPin size={13} strokeWidth={1.75} />
+          Maroc {vehicule.ville ? `> ${vehicule.ville}` : ""} {vehicule.type ? `> ${LABELS_TYPE[vehicule.type] ?? vehicule.type}` : ""}
+        </p>
+
         <div className="grid gap-8 md:grid-cols-2">
           {/* Photo */}
-          <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-brand-light/25 md:h-full">
-            {vehicule.photos?.[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={vehicule.photos[0]}
-                alt={`${vehicule.marque} ${vehicule.modele}`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Icon size={56} strokeWidth={1.25} className="text-brand-dark/40" />
-            )}
-          </div>
+          <Reveal>
+            <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-brand-light/25 md:h-full md:min-h-[420px]">
+              {vehicule.photos?.[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={vehicule.photos[0]}
+                  alt={`${vehicule.marque} ${vehicule.modele}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Icon size={56} strokeWidth={1.25} className="text-brand-dark/40" />
+              )}
+            </div>
+          </Reveal>
 
           {/* Infos + réservation */}
-          <div>
+          <Reveal delay={100}>
             <h1 className="text-2xl font-bold text-brand-dark">
               {vehicule.marque} {vehicule.modele}
             </h1>
-            <p className="mb-1 flex items-center gap-1 text-sm text-gray-500">
-              <MapPin size={14} strokeWidth={1.75} />
-              {vehicule.ville}
-            </p>
-            {proprietaire && (
-              <p className="mb-4 text-sm text-gray-500">
-                Proposé par <span className="font-medium text-brand-dark">{proprietaire.nom_entreprise}</span>
-              </p>
-            )}
+            <div className="mb-4 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500">
+              <span className="flex items-center gap-1">
+                <MapPin size={14} strokeWidth={1.75} />
+                {vehicule.ville}
+              </span>
+              {proprietaire && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span>
+                    Proposé par <span className="font-medium text-brand-dark">{proprietaire.nom_entreprise}</span>
+                  </span>
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    <ShieldCheck size={12} strokeWidth={2} />
+                    Agence vérifiée
+                  </span>
+                </>
+              )}
+            </div>
 
-            <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="mb-4 flex flex-wrap gap-2">
               {vehicule.carburant && (
-                <span className="flex items-center gap-1.5">
-                  <Fuel size={15} strokeWidth={1.75} /> {vehicule.carburant}
+                <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600">
+                  <Fuel size={14} strokeWidth={1.75} /> {vehicule.carburant}
                 </span>
               )}
               {vehicule.transmission && (
-                <span className="flex items-center gap-1.5">
-                  <Gauge size={15} strokeWidth={1.75} /> {vehicule.transmission}
+                <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600">
+                  <Gauge size={14} strokeWidth={1.75} />
+                  {vehicule.transmission === "automatique" ? "Automatique" : "Manuelle"}
                 </span>
               )}
               {vehicule.places && (
-                <span className="flex items-center gap-1.5">
-                  <Users size={15} strokeWidth={1.75} /> {vehicule.places} places
+                <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600">
+                  <Users size={14} strokeWidth={1.75} /> {vehicule.places} places
                 </span>
               )}
               {vehicule.portes && (
-                <span className="flex items-center gap-1.5">
-                  <DoorOpen size={15} strokeWidth={1.75} /> {vehicule.portes} portes
+                <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-600">
+                  <DoorOpen size={14} strokeWidth={1.75} /> {vehicule.portes} portes
                 </span>
               )}
             </div>
 
-            <p className="mb-6 text-2xl font-bold text-brand-dark">
-              {vehicule.prix_jour} <span className="text-base font-normal text-gray-400">MAD/jour</span>
+            <p className="mb-4">
+              <span className="text-2xl font-bold text-brand-dark">{vehicule.prix_jour}</span>
+              <span className="text-base font-normal text-gray-400"> MAD/jour</span>
             </p>
+
+            {conditions.length > 0 && (
+              <div className="mb-4 space-y-1.5 rounded-xl bg-gray-50 px-4 py-3">
+                {conditions.map((c) => (
+                  <p key={c} className="flex items-center gap-2 text-sm text-gray-600">
+                    <Check size={14} strokeWidth={2} className="text-emerald-600" />
+                    {c}
+                  </p>
+                ))}
+              </div>
+            )}
 
             {sp.erreur && (
               <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
@@ -119,50 +164,13 @@ export default async function VehiculeDetailPage({
               </p>
             )}
 
-            <form
-              action={creerReservation}
-              className="space-y-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
-            >
-              <input type="hidden" name="vehicule_id" value={vehicule.id} />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    Date de départ
-                  </label>
-                  <input
-                    type="date"
-                    name="date_debut"
-                    defaultValue={sp.date_debut}
-                    required
-                    className="w-full rounded-full border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand-dark"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    Date de retour
-                  </label>
-                  <input
-                    type="date"
-                    name="date_fin"
-                    defaultValue={sp.date_fin}
-                    required
-                    className="w-full rounded-full border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand-dark"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-full bg-brand-accent py-2.5 text-sm font-semibold text-brand-dark shadow transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
-              >
-                Envoyer une demande de réservation
-              </button>
-              <p className="text-center text-xs text-gray-400">
-                Le propriétaire doit accepter ta demande avant confirmation.
-              </p>
-            </form>
-          </div>
+            <FormulaireReservation
+              vehiculeId={vehicule.id}
+              prixJour={vehicule.prix_jour}
+              dateDebutInitiale={sp.date_debut}
+              dateFinInitiale={sp.date_fin}
+            />
+          </Reveal>
         </div>
       </main>
       <Footer />

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { limiterDebit } from "@/lib/rate-limit";
 
 export async function inscrire(formData: FormData) {
   const email = formData.get("email") as string;
@@ -10,6 +11,15 @@ export async function inscrire(formData: FormData) {
   const nom = formData.get("nom") as string;
   const prenom = formData.get("prenom") as string;
   const telephone = formData.get("telephone") as string;
+
+  // Limite basique par email : 5 tentatives d'inscription / heure.
+  // (Le vrai filet de sécurité reste le rate limit natif de Supabase
+  // Auth, actif côté serveur Supabase indépendamment de ce code —
+  // voir Dashboard > Authentication > Rate Limits.)
+  const debit = limiterDebit(`inscription:${email}`, 5, 60 * 60 * 1000);
+  if (!debit.autorise) {
+    redirect("/inscription?erreur=trop-de-tentatives");
+  }
 
   if (!["client", "proprietaire"].includes(role)) {
     redirect("/inscription?erreur=role-invalide");
@@ -49,6 +59,12 @@ export async function seConnecter(formData: FormData) {
   const password = formData.get("password") as string;
   const redirectVers = formData.get("redirect") as string | null;
 
+  // Limite anti-brute-force basique : 10 tentatives / 15 min par email.
+  const debit = limiterDebit(`connexion:${email}`, 10, 15 * 60 * 1000);
+  if (!debit.autorise) {
+    redirect("/connexion?erreur=trop-de-tentatives");
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -87,6 +103,28 @@ export async function seConnecter(formData: FormData) {
   }
 
   redirect("/");
+}
+
+export async function demanderReinitialisationMotDePasse(formData: FormData) {
+  const email = formData.get("email") as string;
+
+  // Limite basique : 3 demandes / heure par email, pour éviter le
+  // spam de boîtes mail via ce formulaire.
+  const debit = limiterDebit(`reset:${email}`, 3, 60 * 60 * 1000);
+  if (!debit.autorise) {
+    redirect("/mot-de-passe-oublie?message=envoye"); // réponse identique, ne révèle rien
+  }
+
+  const supabase = await createClient();
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${site}/reinitialiser-mot-de-passe`,
+  });
+
+  // On répond toujours pareil (email envoyé) que le compte existe ou
+  // non, pour ne pas révéler quels emails sont inscrits.
+  redirect("/mot-de-passe-oublie?message=envoye");
 }
 
 export async function seDeconnecter() {

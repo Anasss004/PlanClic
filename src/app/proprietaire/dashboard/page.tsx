@@ -53,8 +53,23 @@ export default async function DashboardProprietairePage() {
     .eq("proprietaire_id", user!.id)
     .eq("statut", "terminee");
 
-  const caTotal =
-    terminees?.reduce((somme, r) => somme + (r.prix_total ?? 0), 0) ?? 0;
+  const caTotal = terminees?.reduce((s, r) => s + (r.prix_total ?? 0), 0) ?? 0;
+
+  const dansTrenteJours = new Date();
+  dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
+
+  const { data: documentsAlerte } = await supabase
+    .from("documents_vehicule")
+    .select("id, type, date_expiration, vehicule_id, vehicules(marque, modele)")
+    .eq("proprietaire_id", user!.id)
+    .lte("date_expiration", dansTrenteJours.toISOString().slice(0, 10))
+    .order("date_expiration", { ascending: true });
+
+  const LABELS_DOCUMENT: Record<string, string> = {
+    assurance: "Assurance",
+    controle_technique: "Contrôle technique",
+    vignette: "Vignette",
+  };
 
   const { data: reservationsRecentes } = await supabase
     .from("reservations")
@@ -74,54 +89,47 @@ export default async function DashboardProprietairePage() {
 
   const aucuneActivite = (nbVehicules ?? 0) === 0 && (reservationsRecentes?.length ?? 0) === 0;
 
-  // Alertes d'expiration (assurance, contrôle technique, vignette)
-  // dans les 30 prochains jours ou déjà expirées.
-  const dansTrenteJours = new Date();
-  dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
-
-  const { data: documentsAlerte } = await supabase
-    .from("documents_vehicule")
-    .select("id, type, date_expiration, vehicule_id, vehicules(marque, modele)")
-    .eq("proprietaire_id", user!.id)
-    .lte("date_expiration", dansTrenteJours.toISOString().slice(0, 10))
-    .order("date_expiration", { ascending: true });
-
-  const LABELS_DOCUMENT: Record<string, string> = {
-    assurance: "Assurance",
-    controle_technique: "Contrôle technique",
-    vignette: "Vignette",
-  };
-
   return (
-    <div>
+    <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
           Tableau de bord
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-dash-text-secondary">
           Vue d&apos;ensemble de votre activité sur PlanClic.
         </p>
       </div>
 
       {/* Cartes statistiques */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard icon={Car} label="Véhicules publiés" value={nbVehicules ?? 0} />
-        <StatCard icon={Clock} label="Demandes en attente" value={nbEnAttente ?? 0} />
+      <div className="grid gap-6 sm:grid-cols-3">
         <StatCard
           icon={Wallet}
-          label="Chiffre d'affaires total"
-          value={`${caTotal.toLocaleString("fr-FR")} MAD`}
+          label="Revenus (MAD)"
+          value={caTotal.toLocaleString("fr-FR")}
+          variant="blue"
+        />
+        <StatCard
+          icon={Clock}
+          label="Demandes en attente"
+          value={nbEnAttente ?? 0}
+          variant="gold"
+        />
+        <StatCard
+          icon={Car}
+          label="Véhicules publiés"
+          value={nbVehicules ?? 0}
+          variant="gray"
         />
       </div>
 
       {/* Alertes d'expiration */}
       {documentsAlerte && documentsAlerte.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-800">
+        <div className="mt-6 rounded-xl border border-[#feca5e] bg-[#fff8e8] p-4">
+          <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#755400]">
             <FileWarning size={16} strokeWidth={1.75} />
             {documentsAlerte.length} document(s) à renouveler bientôt
           </p>
-          <ul className="space-y-1 text-sm text-amber-800">
+          <ul className="space-y-1 text-sm text-[#755400]">
             {documentsAlerte.slice(0, 5).map((d) => {
               const expire = d.date_expiration < new Date().toISOString().slice(0, 10);
               return (
@@ -143,7 +151,7 @@ export default async function DashboardProprietairePage() {
 
       {/* Actions rapides */}
       <div className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-gray-900">Actions rapides</h2>
+        <h2 className="mb-3 text-sm font-semibold text-dash-dark">Actions rapides</h2>
         <div className="grid gap-3 sm:grid-cols-4">
           <ActionRapide
             href="/proprietaire/vehicules/nouveau"
@@ -153,7 +161,7 @@ export default async function DashboardProprietairePage() {
             disabledHint="Disponible une fois votre compte vérifié"
           />
           <ActionRapide href="/proprietaire/reservations" icon={ClipboardList} label="Voir les réservations" />
-          <ActionRapide href="/proprietaire/vehicules" icon={Car} label="Voir les véhicules" />
+          <ActionRapide href="/proprietaire/vehicules" icon={Car} label="Voir la flotte" />
           <ActionRapide href="/proprietaire/amendes" icon={TriangleAlert} label="Consulter les amendes" />
         </div>
       </div>
@@ -168,7 +176,7 @@ export default async function DashboardProprietairePage() {
               verifie ? (
                 <Link
                   href="/proprietaire/vehicules/nouveau"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-accent px-5 py-2 text-sm font-semibold text-brand-dark"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2 text-sm font-semibold text-dash-text"
                 >
                   <Plus size={16} strokeWidth={2} />
                   Ajouter un véhicule
@@ -179,11 +187,10 @@ export default async function DashboardProprietairePage() {
         </div>
       ) : (
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {/* Activité récente */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-            <h2 className="mb-4 text-sm font-semibold text-gray-900">Activité récente</h2>
+          <div className="rounded-xl border border-[rgba(193,199,203,0.3)] bg-white p-5 shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
+            <h2 className="mb-4 text-sm font-semibold text-dash-dark">Activité récente</h2>
             {!reservationsRecentes || reservationsRecentes.length === 0 ? (
-              <p className="text-sm text-gray-400">Aucune activité récente.</p>
+              <p className="text-sm text-dash-text-secondary">Aucune activité récente.</p>
             ) : (
               <ul className="space-y-3">
                 {reservationsRecentes.map((r) => {
@@ -191,18 +198,16 @@ export default async function DashboardProprietairePage() {
                   return (
                     <li key={r.id} className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-gray-900">
+                        <p className="truncate text-sm font-medium text-dash-text">
                           {/* @ts-expect-error - relation typing simplifié */}
                           {r.vehicules?.marque} {r.vehicules?.modele}
                         </p>
-                        <p className="truncate text-xs text-gray-500">
+                        <p className="truncate text-xs text-dash-text-secondary">
                           {/* @ts-expect-error - relation typing simplifié */}
                           {r.profiles?.prenom} {r.profiles?.nom}
                         </p>
                       </div>
-                      <Badge variant={statut?.variant ?? "neutral"}>
-                        {statut?.label ?? r.statut}
-                      </Badge>
+                      <Badge variant={statut?.variant ?? "neutral"}>{statut?.label ?? r.statut}</Badge>
                     </li>
                   );
                 })}
@@ -210,26 +215,25 @@ export default async function DashboardProprietairePage() {
             )}
           </div>
 
-          {/* Réservations à venir */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-            <h2 className="mb-4 text-sm font-semibold text-gray-900">Réservations à venir</h2>
+          <div className="rounded-xl border border-[rgba(193,199,203,0.3)] bg-white p-5 shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
+            <h2 className="mb-4 text-sm font-semibold text-dash-dark">Réservations à venir</h2>
             {!reservationsAVenir || reservationsAVenir.length === 0 ? (
-              <p className="text-sm text-gray-400">Aucune réservation confirmée à venir.</p>
+              <p className="text-sm text-dash-text-secondary">Aucune réservation confirmée à venir.</p>
             ) : (
               <ul className="space-y-3">
                 {reservationsAVenir.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-900">
+                      <p className="truncate text-sm font-medium text-dash-text">
                         {/* @ts-expect-error - relation typing simplifié */}
                         {r.vehicules?.marque} {r.vehicules?.modele}
                       </p>
-                      <p className="truncate text-xs text-gray-500">
+                      <p className="truncate text-xs text-dash-text-secondary">
                         {/* @ts-expect-error - relation typing simplifié */}
                         {r.profiles?.prenom} {r.profiles?.nom}
                       </p>
                     </div>
-                    <p className="shrink-0 text-xs text-gray-500">
+                    <p className="shrink-0 text-xs text-dash-text-secondary">
                       {r.date_debut} → {r.date_fin}
                     </p>
                   </li>
@@ -260,7 +264,7 @@ function ActionRapide({
     return (
       <div
         title={disabledHint}
-        className="flex cursor-not-allowed items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-400"
+        className="flex cursor-not-allowed items-center gap-2.5 rounded-lg border border-dash-border bg-gray-50 px-4 py-3 text-sm text-gray-400"
       >
         <Icon size={16} strokeWidth={1.75} />
         {label}
@@ -271,7 +275,7 @@ function ActionRapide({
   return (
     <Link
       href={href}
-      className="group flex items-center justify-between gap-2.5 rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition hover:border-brand-dark/20 hover:text-brand-dark"
+      className="group flex items-center justify-between gap-2.5 rounded-lg border border-dash-border bg-white px-4 py-3 text-sm font-medium text-dash-text-secondary shadow-[0px_4px_10px_rgba(43,76,91,0.05)] transition hover:border-dash-dark/30 hover:text-dash-dark"
     >
       <span className="flex items-center gap-2.5">
         <Icon size={16} strokeWidth={1.75} />

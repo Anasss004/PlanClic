@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { modifierVehicule } from "@/app/actions/proprietaire";
+import FileUpload from "@/components/ui/FileUpload";
 
 export default async function ModifierVehiculePage({
   params,
@@ -40,6 +41,26 @@ export default async function ModifierVehiculePage({
         action={modifierAvecId}
         className="space-y-4 rounded-2xl border border-black/5 bg-white p-6 shadow-sm"
       >
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-brand-dark">Photos</label>
+          {vehicule.photos?.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {vehicule.photos.map((url: string, i: number) => (
+                <div key={i} className="h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="mb-2 text-xs text-[#6a6a6a]">
+            {vehicule.photos?.length > 0
+              ? "Les nouvelles photos s'ajouteront à celles déjà en ligne."
+              : "Aucune photo pour l'instant."}
+          </p>
+          <FileUpload name="photos" accept="image/*" multiple theme="brand" />
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Marque</label>

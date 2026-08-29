@@ -5,6 +5,7 @@ import { ClipboardList } from "lucide-react";
 import { annulerReservation } from "@/app/actions/client";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
+import { useToast } from "@/components/ui/Toast";
 
 const STATUTS: Record<string, { label: string; variant: "warning" | "success" | "danger" | "info" | "neutral" }> = {
   en_attente: { label: "En attente", variant: "warning" },
@@ -16,14 +17,16 @@ const STATUTS: Record<string, { label: string; variant: "warning" | "success" | 
 
 export default function MesReservations({ reservations }: { reservations: any[] }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function annuler(id: string) {
     if (!confirm("Annuler cette demande de réservation ?")) return;
     startTransition(async () => {
       try {
         await annulerReservation(id);
+        toast.success("Réservation annulée.");
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Une erreur est survenue.");
+        toast.error(e instanceof Error ? e.message : "Une erreur est survenue.");
       }
     });
   }

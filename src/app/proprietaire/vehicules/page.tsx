@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { Plus, Car, Fuel, Gauge, Users, DoorOpen, TrendingUp, ArrowRight, MapPin } from "lucide-react";
+import { Plus, Car, Wrench, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import EmptyState from "@/components/ui/EmptyState";
-import Badge from "@/components/ui/Badge";
 import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
 
 export default async function VehiculesPage() {
@@ -24,9 +23,6 @@ export default async function VehiculesPage() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
-  // Revenu généré par véhicule (réservations terminées) — calculé en
-  // une seule requête groupée côté client plutôt qu'une requête par
-  // véhicule.
   const { data: reservationsTerminees } = await supabase
     .from("reservations")
     .select("vehicule_id, prix_total")
@@ -41,16 +37,32 @@ export default async function VehiculesPage() {
     );
   });
 
+  // Dernier entretien connu par véhicule (donnée réelle uniquement,
+  // pas de "prochain entretien" prédit puisqu'on n'a pas cette info).
+  const idsVehicules = (vehicules ?? []).map((v) => v.id);
+  const { data: dernieresMaintenances } = idsVehicules.length
+    ? await supabase
+        .from("maintenance")
+        .select("vehicule_id, date_intervention")
+        .in("vehicule_id", idsVehicules)
+        .order("date_intervention", { ascending: false })
+    : { data: [] };
+
+  const dernierEntretienParVehicule = new Map<string, string>();
+  (dernieresMaintenances ?? []).forEach((m) => {
+    if (!dernierEntretienParVehicule.has(m.vehicule_id)) {
+      dernierEntretienParVehicule.set(m.vehicule_id, m.date_intervention);
+    }
+  });
+
   const verifie = proprietaire?.statut_verification === "verifie";
 
   return (
-    <div>
+    <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-            Mes véhicules
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Ma Flotte</h1>
+          <p className="mt-1 text-sm text-dash-text-secondary">
             {vehicules?.length ?? 0} véhicule(s) publié(s)
           </p>
         </div>
@@ -58,7 +70,7 @@ export default async function VehiculesPage() {
         {verifie ? (
           <Link
             href="/proprietaire/vehicules/nouveau"
-            className="inline-flex items-center gap-1.5 rounded-full bg-brand-accent px-5 py-2 text-sm font-semibold text-brand-dark transition-all duration-200 hover:brightness-95 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2.5 text-sm font-semibold text-dash-text shadow transition hover:brightness-95"
           >
             <Plus size={16} strokeWidth={2} />
             Ajouter un véhicule
@@ -66,7 +78,7 @@ export default async function VehiculesPage() {
         ) : (
           <span
             title="Disponible une fois votre compte vérifié"
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full bg-gray-100 px-5 py-2 text-sm font-semibold text-gray-400"
+            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400"
           >
             <Plus size={16} strokeWidth={2} />
             Ajouter un véhicule
@@ -83,7 +95,7 @@ export default async function VehiculesPage() {
             verifie ? (
               <Link
                 href="/proprietaire/vehicules/nouveau"
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand-accent px-5 py-2 text-sm font-semibold text-brand-dark"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2.5 text-sm font-semibold text-dash-text"
               >
                 <Plus size={16} strokeWidth={2} />
                 Ajouter un véhicule
@@ -92,95 +104,91 @@ export default async function VehiculesPage() {
           }
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-3">
           {vehicules.map((v) => {
             const revenu = revenuParVehicule.get(v.id) ?? 0;
+            const dernierEntretien = dernierEntretienParVehicule.get(v.id);
             return (
               <div
                 key={v.id}
-                className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+                className="group flex items-center gap-4 rounded-xl border border-white/30 bg-white p-3 shadow-[0px_4px_20px_rgba(18,53,68,0.05)] transition-shadow hover:shadow-[0px_8px_24px_rgba(18,53,68,0.1)] sm:gap-6 sm:p-4"
               >
                 {/* Photo */}
-                <div className="relative h-40 overflow-hidden bg-brand-light/25">
+                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-[#eeeeef] sm:h-24 sm:w-32">
                   {v.photos?.[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={v.photos[0]}
                       alt={`${v.marque} ${v.modele}`}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <Car size={36} strokeWidth={1.25} className="text-brand-dark/40" />
+                      <Car size={28} strokeWidth={1.25} className="text-dash-dark/30" />
                     </div>
                   )}
-                  <div className="absolute right-3 top-3">
-                    <Badge variant={v.statut === "actif" ? "success" : "neutral"}>
-                      {v.statut === "actif" ? "Actif" : "Inactif"}
-                    </Badge>
+                </div>
+
+                {/* Infos principales */}
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/proprietaire/vehicules/${v.id}`}
+                    className="truncate text-lg font-semibold text-dash-text hover:text-dash-dark hover:underline sm:text-xl"
+                  >
+                    {v.marque} {v.modele}
+                  </Link>
+                  <p className="font-mono text-xs text-dash-text-secondary sm:text-sm">
+                    {v.immatriculation}
+                  </p>
+
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {revenu > 0 && (
+                      <span className="flex items-center gap-1 text-xs font-medium text-[#006c4a]">
+                        <TrendingUp size={12} strokeWidth={2} />
+                        {revenu.toLocaleString("fr-FR")} MAD générés
+                      </span>
+                    )}
+                    {dernierEntretien && (
+                      <span className="hidden items-center gap-1 text-xs text-dash-text-secondary sm:flex">
+                        <Wrench size={12} strokeWidth={1.75} />
+                        Entretien : {dernierEntretien}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="p-4">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-bold text-brand-dark">
-                        {v.marque} {v.modele}
-                      </p>
-                      <p className="flex items-center gap-1 text-xs text-gray-500">
-                        <MapPin size={11} strokeWidth={1.75} />
-                        {v.ville}
-                      </p>
-                    </div>
-                    <MenuActionsVehicule vehiculeId={v.id} statut={v.statut} />
-                  </div>
+                {/* Statut + prix */}
+                <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${
+                      v.statut === "actif"
+                        ? "border-dash-accent/30 bg-dash-accent/20 text-[#7b5900]"
+                        : "border-gray-300 bg-gray-50 text-gray-500"
+                    }`}
+                  >
+                    {v.statut === "actif" ? "Disponible" : "Inactif"}
+                  </span>
+                  <p className="text-lg font-semibold text-dash-dark">
+                    {v.prix_jour}
+                    <span className="text-sm font-normal text-dash-text-secondary"> DH/j</span>
+                  </p>
+                </div>
 
-                  {/* Caractéristiques */}
-                  <div className="mb-3 flex flex-wrap gap-1.5">
-                    {v.carburant && (
-                      <span className="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600">
-                        <Fuel size={11} strokeWidth={1.75} /> {v.carburant}
-                      </span>
-                    )}
-                    {v.transmission && (
-                      <span className="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600">
-                        <Gauge size={11} strokeWidth={1.75} />
-                        {v.transmission === "automatique" ? "Automatique" : "Manuelle"}
-                      </span>
-                    )}
-                    {v.places && (
-                      <span className="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600">
-                        <Users size={11} strokeWidth={1.75} /> {v.places}
-                      </span>
-                    )}
-                    {v.portes && (
-                      <span className="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600">
-                        <DoorOpen size={11} strokeWidth={1.75} /> {v.portes}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Prix + revenu */}
-                  <div className="mb-4 flex items-center justify-between border-t border-gray-50 pt-3">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {v.prix_jour}
-                      <span className="font-normal text-gray-400"> MAD/jour</span>
-                    </p>
-                    {revenu > 0 && (
-                      <p className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <TrendingUp size={12} strokeWidth={2} />
-                        {revenu.toLocaleString("fr-FR")} MAD générés
-                      </p>
-                    )}
-                  </div>
-
+                {/* Actions */}
+                <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={`/proprietaire/vehicules/${v.id}`}
-                    className="flex items-center justify-center gap-1.5 rounded-full border border-gray-200 py-2 text-sm font-medium text-brand-dark transition-all duration-200 hover:border-brand-dark hover:bg-brand-dark hover:text-white"
+                    className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
                   >
-                    Voir les détails
-                    <ArrowRight size={14} strokeWidth={2} />
+                    Voir
                   </Link>
+                  <Link
+                    href={`/proprietaire/vehicules/${v.id}/modifier`}
+                    className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
+                  >
+                    Modifier
+                  </Link>
+                  <MenuActionsVehicule vehiculeId={v.id} statut={v.statut} />
                 </div>
               </div>
             );

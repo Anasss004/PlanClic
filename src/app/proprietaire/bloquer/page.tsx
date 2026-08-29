@@ -2,6 +2,7 @@ import { Ban } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { bloquerVehicule } from "@/app/actions/proprietaire";
 import EmptyState from "@/components/ui/EmptyState";
+import DatePicker from "@/components/ui/DatePicker";
 import { Car } from "lucide-react";
 
 export default async function BloquerVehiculePage({
@@ -76,23 +77,13 @@ export default async function BloquerVehiculePage({
               <label className="mb-1 block text-sm font-semibold text-brand-dark">
                 Date de début
               </label>
-              <input
-                type="date"
-                name="date_debut"
-                required
-                className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark"
-              />
+              <DatePicker name="date_debut" required theme="brand" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-semibold text-brand-dark">
                 Date de fin
               </label>
-              <input
-                type="date"
-                name="date_fin"
-                required
-                className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark"
-              />
+              <DatePicker name="date_fin" required theme="brand" />
             </div>
           </div>
 

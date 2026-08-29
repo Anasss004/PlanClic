@@ -1,10 +1,10 @@
 const VARIANTS = {
-  neutral: "bg-gray-100 text-gray-600",
-  warning: "bg-amber-50 text-amber-700",
-  success: "bg-emerald-50 text-emerald-700",
-  danger: "bg-rose-50 text-rose-700",
-  info: "bg-sky-50 text-sky-700",
-  brand: "bg-brand-light/40 text-brand-dark",
+  neutral: "bg-[#e3e2e3] text-dash-text-secondary",
+  warning: "bg-[#feca5e] text-[#755400]",
+  success: "bg-[#a6f4c5] text-[#006c4a]",
+  danger: "bg-[#ffdad6] text-[#ba1a1a]",
+  info: "bg-[#c5e8fa] text-dash-dark",
+  brand: "bg-dash-accent/20 text-[#7b5900] border border-dash-accent/30",
 } as const;
 
 export default function Badge({
@@ -16,7 +16,7 @@ export default function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${VARIANTS[variant]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${VARIANTS[variant]}`}
     >
       {children}
     </span>

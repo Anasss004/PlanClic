@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Car, Bike, Truck, Loader2 } from "lucide-react";
 import Reveal from "@/components/motion/Reveal";
+import DatePicker from "@/components/ui/DatePicker";
 import { VILLES } from "@/lib/villes";
 
 const TYPES = [
@@ -126,39 +127,13 @@ export default function SearchHero() {
                 <label className="mb-1 block text-sm font-semibold text-brand-dark">
                   Date de départ
                 </label>
-                <div className="flex overflow-hidden rounded-full border border-[#b9b9b9] text-sm transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_rgba(21,82,99,0.12)] focus-within:border-brand-dark">
-                  <input
-                    type="date"
-                    name="date_debut"
-                    min={AUJOURDHUI}
-                    required
-                    className="w-2/3 border-r border-[#b9b9b9] px-3 py-2 text-brand-dark outline-none"
-                  />
-                  <input
-                    type="time"
-                    name="heure_debut"
-                    className="w-1/3 px-2 py-2 text-brand-dark outline-none"
-                  />
-                </div>
+                <DatePicker name="date_debut" min={AUJOURDHUI} required theme="brand" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-semibold text-brand-dark">
                   Date de retour
                 </label>
-                <div className="flex overflow-hidden rounded-full border border-[#b9b9b9] text-sm transition-shadow duration-200 focus-within:shadow-[0_0_0_3px_rgba(21,82,99,0.12)] focus-within:border-brand-dark">
-                  <input
-                    type="date"
-                    name="date_fin"
-                    min={AUJOURDHUI}
-                    required
-                    className="w-2/3 border-r border-[#b9b9b9] px-3 py-2 text-brand-dark outline-none"
-                  />
-                  <input
-                    type="time"
-                    name="heure_fin"
-                    className="w-1/3 px-2 py-2 text-brand-dark outline-none"
-                  />
-                </div>
+                <DatePicker name="date_fin" min={AUJOURDHUI} required theme="brand" />
               </div>
             </div>
 

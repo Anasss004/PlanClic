@@ -3,9 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { validerFichier } from "@/lib/validation-fichiers";
 
-function cheminAleatoire(userId: string, fichier: File) {
-  const extension = fichier.name.split(".").pop();
+function cheminAleatoire(userId: string, mime: string) {
+  const extension = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : "jpg";
   return `${userId}/${crypto.randomUUID()}.${extension}`;
 }
 
@@ -141,11 +142,16 @@ export async function uploaderDocument(formData: FormData) {
   const typeDocument = formData.get("type_document") as string;
   const fichier = formData.get("fichier") as File;
 
-  if (!fichier || fichier.size === 0) {
-    redirect("/profil?erreur=fichier-manquant");
+  if (!["cin", "permis"].includes(typeDocument)) {
+    redirect("/profil?erreur=type-document-invalide");
   }
 
-  const chemin = cheminAleatoire(user.id, fichier);
+  const validation = await validerFichier(fichier, ["image/jpeg", "image/png", "application/pdf"]);
+  if (!validation.valide) {
+    redirect("/profil?erreur=fichier-invalide");
+  }
+
+  const chemin = cheminAleatoire(user.id, fichier.type);
 
   const { error: erreurUpload } = await supabase.storage
     .from("documents-prives")

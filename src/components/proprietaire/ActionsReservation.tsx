@@ -3,6 +3,13 @@
 import { useTransition } from "react";
 import { Check, X, FlagOff } from "lucide-react";
 import { traiterReservation } from "@/app/actions/proprietaire";
+import { useToast } from "@/components/ui/Toast";
+
+const LABELS_SUCCES: Record<string, string> = {
+  confirmee: "Réservation acceptée.",
+  refusee: "Réservation refusée.",
+  terminee: "Réservation marquée comme terminée.",
+};
 
 export default function ActionsReservation({
   reservationId,
@@ -12,13 +19,15 @@ export default function ActionsReservation({
   statut: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function agir(nouveauStatut: "confirmee" | "refusee" | "terminee") {
     startTransition(async () => {
       try {
         await traiterReservation(reservationId, nouveauStatut);
+        toast.success(LABELS_SUCCES[nouveauStatut]);
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Une erreur est survenue.");
+        toast.error(e instanceof Error ? e.message : "Une erreur est survenue.");
       }
     });
   }
@@ -29,7 +38,7 @@ export default function ActionsReservation({
         <button
           disabled={isPending}
           onClick={() => agir("confirmee")}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-dark px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-dash-sidebar px-4 py-2.5 text-xs font-semibold text-dash-muted transition hover:opacity-90 disabled:opacity-50"
         >
           <Check size={13} strokeWidth={2} />
           Accepter
@@ -37,7 +46,7 @@ export default function ActionsReservation({
         <button
           disabled={isPending}
           onClick={() => agir("refusee")}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg border border-dash-border px-4 py-2.5 text-xs font-medium text-dash-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
         >
           <X size={13} strokeWidth={2} />
           Refuser
@@ -51,7 +60,7 @@ export default function ActionsReservation({
       <button
         disabled={isPending}
         onClick={() => agir("terminee")}
-        className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg border border-dash-border px-4 py-2.5 text-xs font-medium text-dash-text-secondary transition hover:bg-gray-50 disabled:opacity-50"
       >
         <FlagOff size={13} strokeWidth={2} />
         Marquer terminée

@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
 import { uploaderDocument } from "@/app/actions/client";
 import Badge from "@/components/ui/Badge";
+import FileUpload from "@/components/ui/FileUpload";
 
 const TYPES = [
   { key: "cin", label: "Carte d'identité nationale" },
@@ -25,11 +26,11 @@ export default function MesDocuments({ documents }: { documents: any[] }) {
           prochaines réservations.
         </p>
 
-        <form action={uploaderDocument} className="flex flex-col gap-3 sm:flex-row">
+        <form action={uploaderDocument} className="space-y-3">
           <select
             name="type_document"
             required
-            className="rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark"
+            className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-brand-dark sm:w-auto"
           >
             {TYPES.map((t) => (
               <option key={t.key} value={t.key}>
@@ -37,13 +38,7 @@ export default function MesDocuments({ documents }: { documents: any[] }) {
               </option>
             ))}
           </select>
-          <input
-            type="file"
-            name="fichier"
-            accept="application/pdf,image/*"
-            required
-            className="flex-1 text-sm"
-          />
+          <FileUpload name="fichier" accept="application/pdf,image/*" required theme="brand" />
           <button
             type="submit"
             className="rounded-full bg-brand-accent px-5 py-2.5 text-sm font-semibold text-brand-dark shadow transition hover:brightness-95"

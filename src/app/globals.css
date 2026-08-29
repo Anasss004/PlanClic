@@ -4,10 +4,19 @@
   --background: #ffffff;
   --foreground: #171717;
 
-  /* Charte PlanClic (extraite du Figma) */
-  --color-brand-dark: #155263;   /* bleu-vert foncé — textes, header actif */
-  --color-brand-accent: #ffc93c; /* jaune — boutons principaux */
-  --color-brand-light: #beced3;  /* bleu-gris clair — fonds secondaires */
+  /* Charte PlanClic — homepage (Figma original) */
+  --color-brand-dark: #155263;
+  --color-brand-accent: #ffc93c;
+  --color-brand-light: #beced3;
+
+  /* Charte "Dashboard" — propriétaire & admin (nouveau thème) */
+  --color-dash-dark: #123544;
+  --color-dash-sidebar: #2b4c5b;
+  --color-dash-accent: #f7c358;
+  --color-dash-muted: #9abccd;
+  --color-dash-border: #c1c7cb;
+  --color-dash-text: #1a1c1d;
+  --color-dash-text-secondary: #42484b;
 }
 
 @theme inline {
@@ -15,10 +24,19 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-bagel: var(--font-bagel);
+  --font-jakarta: var(--font-jakarta);
 
   --color-brand-dark: var(--color-brand-dark);
   --color-brand-accent: var(--color-brand-accent);
   --color-brand-light: var(--color-brand-light);
+
+  --color-dash-dark: var(--color-dash-dark);
+  --color-dash-sidebar: var(--color-dash-sidebar);
+  --color-dash-accent: var(--color-dash-accent);
+  --color-dash-muted: var(--color-dash-muted);
+  --color-dash-border: var(--color-dash-border);
+  --color-dash-text: var(--color-dash-text);
+  --color-dash-text-secondary: var(--color-dash-text-secondary);
 }
 
 body {

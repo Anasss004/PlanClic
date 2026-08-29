@@ -10,16 +10,24 @@ import {
   ShieldAlert,
   Plus,
   Ban,
+  LifeBuoy,
+  CalendarRange,
+  BarChart3,
+  Settings,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { seDeconnecter } from "@/app/actions/auth";
 import NavLink from "@/components/proprietaire/NavLink";
+import MobileDrawer from "@/components/proprietaire/MobileDrawer";
 
 const NAV = [
   { href: "/proprietaire/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/proprietaire/vehicules", label: "Mes véhicules", icon: Car },
+  { href: "/proprietaire/vehicules", label: "Ma Flotte", icon: Car },
   { href: "/proprietaire/reservations", label: "Réservations", icon: ClipboardList },
+  { href: "/proprietaire/calendrier", label: "Calendrier", icon: CalendarRange },
+  { href: "/proprietaire/statistiques", label: "Statistiques", icon: BarChart3 },
   { href: "/proprietaire/amendes", label: "Amendes", icon: TriangleAlert },
+  { href: "/proprietaire/parametres", label: "Paramètres", icon: Settings },
 ];
 
 export default async function ProprietaireLayout({
@@ -64,92 +72,101 @@ export default async function ProprietaireLayout({
   const verifie = proprietaire.statut_verification === "verifie";
   const initiales = `${profile.prenom?.[0] ?? ""}${profile.nom?.[0] ?? ""}`.toUpperCase();
 
-  return (
-    <div className="flex min-h-screen bg-[#f8f9fa]">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-brand-dark lg:flex">
-        <div className="px-5 pt-6 pb-4">
-          <Link
-            href="/"
-            className="font-[family-name:var(--font-bagel)] text-xl text-white"
-          >
-            PlanClic
-          </Link>
+  const contenuSidebar = (
+    <>
+      <div>
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dash-accent text-lg font-bold text-dash-text">
+            PC
+          </div>
+          <div>
+            <p className="text-2xl font-bold leading-none text-white">PlanClic</p>
+            <p className="text-sm text-dash-muted opacity-80">Espace Propriétaire</p>
+          </div>
         </div>
 
-        <nav className="space-y-0.5 px-3">
+        {verifie ? (
+          <Link
+            href="/proprietaire/vehicules/nouveau"
+            className="mb-8 flex items-center justify-center gap-2 rounded-lg bg-dash-accent px-4 py-3 text-sm font-semibold text-dash-text shadow transition hover:brightness-95"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Ajouter un véhicule
+          </Link>
+        ) : (
+          <div
+            title="Disponible une fois votre compte vérifié"
+            className="mb-8 flex cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-3 text-sm font-semibold text-white/30"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Ajouter un véhicule
+          </div>
+        )}
+
+        <nav className="space-y-2">
           {NAV.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}
-              icon={<item.icon size={17} strokeWidth={1.75} />}
+              icon={<item.icon size={18} strokeWidth={1.75} />}
               badge={item.href === "/proprietaire/reservations" ? nbEnAttente ?? 0 : undefined}
             >
               {item.label}
             </NavLink>
           ))}
+          <Link
+            href="/proprietaire/bloquer"
+            className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-normal text-dash-muted transition hover:bg-white/5"
+          >
+            <Ban size={18} strokeWidth={1.75} />
+            Bloquer un véhicule
+          </Link>
         </nav>
+      </div>
 
-        {/* Raccourcis */}
-        <div className="mt-6 px-3">
-          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-white/35">
-            Raccourcis
-          </p>
-          <div className="space-y-0.5">
-            {verifie ? (
-              <Link
-                href="/proprietaire/vehicules/nouveau"
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/65 transition hover:bg-white/5 hover:text-white"
-              >
-                <Plus size={17} strokeWidth={1.75} />
-                Ajouter un véhicule
-              </Link>
-            ) : (
-              <span
-                title="Disponible une fois votre compte vérifié"
-                className="flex cursor-not-allowed items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/25"
-              >
-                <Plus size={17} strokeWidth={1.75} />
-                Ajouter un véhicule
-              </span>
-            )}
-            <Link
-              href="/proprietaire/bloquer"
-              className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/65 transition hover:bg-white/5 hover:text-white"
-            >
-              <Ban size={17} strokeWidth={1.75} />
-              Bloquer un véhicule
-            </Link>
+      <div className="mt-8 lg:mt-0">
+        <div className="mb-2 flex items-center gap-3 border-t border-dash-dark pt-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
+            {initiales || "?"}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-white">
+              {profile.prenom} {profile.nom}
+            </p>
+            <p className="truncate text-xs text-dash-muted">{proprietaire.nom_entreprise}</p>
           </div>
         </div>
+        <Link
+          href="#"
+          className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-dash-muted transition hover:bg-white/5"
+        >
+          <LifeBuoy size={18} strokeWidth={1.75} />
+          Support
+        </Link>
+        <form action={seDeconnecter}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm text-dash-muted transition hover:bg-white/5"
+          >
+            <LogOut size={18} strokeWidth={1.75} />
+            Déconnexion
+          </button>
+        </form>
+      </div>
+    </>
+  );
 
-        <div className="flex-1" />
-
-        <div className="border-t border-white/10 px-3 py-4">
-          <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
-              {initiales || "?"}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">
-                {profile.prenom} {profile.nom}
-              </p>
-              <p className="truncate text-xs text-white/50">
-                {proprietaire.nom_entreprise}
-              </p>
-            </div>
-          </div>
-          <form action={seDeconnecter}>
-            <button
-              type="submit"
-              className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm text-white/60 transition hover:bg-white/5 hover:text-white"
-            >
-              <LogOut size={16} strokeWidth={1.75} />
-              Se déconnecter
-            </button>
-          </form>
-        </div>
+  return (
+    <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)]">
+      {/* Sidebar desktop */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col justify-between bg-dash-sidebar px-8 py-8 lg:flex">
+        {contenuSidebar}
       </aside>
+
+      {/* Barre + tiroir mobile */}
+      <MobileDrawer>
+        <div className="flex min-h-full flex-col justify-between">{contenuSidebar}</div>
+      </MobileDrawer>
 
       {/* Contenu */}
       <div className="flex-1 lg:pl-64">

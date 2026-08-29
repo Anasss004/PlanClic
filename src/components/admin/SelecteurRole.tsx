@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { changerRole } from "@/app/actions/admin";
+import { useToast } from "@/components/ui/Toast";
 
 const ROLES = ["client", "proprietaire", "support", "admin"] as const;
 
@@ -13,6 +14,7 @@ export default function SelecteurRole({
   roleActuel: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const toast = useToast();
 
   function changer(role: (typeof ROLES)[number]) {
     if (role === roleActuel) return;
@@ -20,8 +22,9 @@ export default function SelecteurRole({
     startTransition(async () => {
       try {
         await changerRole(userId, role);
+        toast.success(`Rôle changé en "${role}".`);
       } catch (e) {
-        alert(e instanceof Error ? e.message : "Erreur.");
+        toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }

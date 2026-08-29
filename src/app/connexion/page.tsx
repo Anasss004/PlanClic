@@ -5,10 +5,12 @@ import { seConnecter } from "@/app/actions/auth";
 const ERREURS: Record<string, string> = {
   "identifiants-invalides": "Email ou mot de passe incorrect.",
   "email-non-confirme": "Confirme ton adresse email avant de te connecter (vérifie ta boîte mail).",
+  "trop-de-tentatives": "Trop de tentatives. Réessaie dans quelques minutes.",
 };
 
 const MESSAGES: Record<string, string> = {
   "verifiez-votre-email": "Compte créé. Vérifie ta boîte mail pour confirmer ton adresse.",
+  "mot-de-passe-modifie": "Mot de passe modifié avec succès. Connecte-toi avec ton nouveau mot de passe.",
 };
 
 export default async function ConnexionPage({
