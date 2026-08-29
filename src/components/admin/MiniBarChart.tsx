@@ -18,7 +18,10 @@ export default function MiniBarChart({
   legende?: string;
   legende2?: string;
 }) {
-  const max = Math.max(1, ...points.map((p) => Math.max(p.valeur, p.valeur2 ?? 0)));
+  // Chaque série est normalisée sur son propre maximum : une série
+  // "montants" et une série "compteurs" restent toutes deux lisibles.
+  const max1 = Math.max(1, ...points.map((p) => p.valeur));
+  const max2 = Math.max(1, ...points.map((p) => p.valeur2 ?? 0));
 
   return (
     <div>
@@ -44,13 +47,13 @@ export default function MiniBarChart({
             <div className="flex w-full flex-1 items-end justify-center gap-0.5">
               <div
                 className="w-full max-w-[26px] rounded-t bg-dash-sidebar"
-                style={{ height: `${(p.valeur / max) * 100}%` }}
+                style={{ height: `${(p.valeur / max1) * 100}%` }}
                 title={`${p.label} : ${p.valeur.toLocaleString("fr-FR")}${suffixe}`}
               />
               {p.valeur2 !== undefined && (
                 <div
                   className="w-full max-w-[26px] rounded-t bg-dash-accent"
-                  style={{ height: `${(p.valeur2 / max) * 100}%` }}
+                  style={{ height: `${(p.valeur2 / max2) * 100}%` }}
                   title={`${p.label} : ${p.valeur2.toLocaleString("fr-FR")}`}
                 />
               )}

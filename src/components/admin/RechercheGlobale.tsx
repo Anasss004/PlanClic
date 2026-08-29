@@ -34,10 +34,7 @@ export default function RechercheGlobale() {
 
   useEffect(() => {
     const t = terme.trim();
-    if (t.length < 2) {
-      setResultats([]);
-      return;
-    }
+    if (t.length < 2) return;
     const timer = setTimeout(() => {
       startTransition(async () => {
         try {
