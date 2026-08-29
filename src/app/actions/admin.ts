@@ -169,6 +169,33 @@ export async function definirActifAgence(proprietaireId: string, actif: boolean)
   revalidatePath("/admin/utilisateurs");
 }
 
+// ------------------------------------------------------------
+// Recherche globale (sidebar admin) — utilisateur / agence /
+// véhicule / réservation. Passe par la fonction SECURITY DEFINER
+// admin_recherche_globale() qui revérifie le rôle staff.
+// ------------------------------------------------------------
+export type ResultatRecherche = {
+  categorie: "agence" | "utilisateur" | "vehicule" | "reservation";
+  ref_id: string;
+  titre: string;
+  sous_titre: string;
+  lien: string;
+};
+
+export async function rechercheGlobaleAdmin(
+  terme: string
+): Promise<ResultatRecherche[]> {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_recherche_globale", {
+    p_terme: terme,
+  });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ResultatRecherche[];
+}
+
 export async function envoyerMessageProprietaire(
   proprietaireId: string,
   titre: string,

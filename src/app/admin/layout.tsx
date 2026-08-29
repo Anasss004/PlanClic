@@ -9,20 +9,32 @@ import {
   LogOut,
   Package,
   CreditCard,
+  Sparkles,
+  Megaphone,
+  SlidersHorizontal,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { seDeconnecter } from "@/app/actions/auth";
 import NavLink from "@/components/proprietaire/NavLink";
 import MobileDrawer from "@/components/proprietaire/MobileDrawer";
+import RechercheGlobale from "@/components/admin/RechercheGlobale";
 
 const NAV = [
   { href: "/admin/dashboard", label: "Vue d'ensemble", icon: LayoutDashboard },
   { href: "/admin/verifications", label: "Vérifications", icon: ShieldCheck },
   { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
   { href: "/admin/vehicules", label: "Véhicules", icon: Car },
+  { href: "/admin/creer-espace", label: "Créer un espace", icon: Sparkles },
   { href: "/admin/plans", label: "Plans", icon: Package },
   { href: "/admin/abonnements", label: "Abonnements", icon: CreditCard },
-  { href: "/admin/roles", label: "Rôles", icon: KeyRound },
+  { href: "/admin/annonces", label: "Annonces", icon: Megaphone },
+  { href: "/admin/roles", label: "Rôles", icon: KeyRound, adminOnly: true },
+  {
+    href: "/admin/parametres-plateforme",
+    label: "Paramètres plateforme",
+    icon: SlidersHorizontal,
+    adminOnly: true,
+  },
 ];
 
 export default async function AdminLayout({
@@ -63,9 +75,11 @@ export default async function AdminLayout({
           </div>
         </div>
 
+        <RechercheGlobale />
+
         <nav className="space-y-2">
           {NAV.map((item) => {
-            if (item.href === "/admin/roles" && profile.role !== "admin") {
+            if (item.adminOnly && profile.role !== "admin") {
               return null;
             }
             return (
