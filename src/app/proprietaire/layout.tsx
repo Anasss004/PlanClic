@@ -14,6 +14,7 @@ import {
   CalendarRange,
   BarChart3,
   Settings,
+  Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { seDeconnecter } from "@/app/actions/auth";
@@ -29,6 +30,7 @@ const NAV = [
   { href: "/proprietaire/calendrier", label: "Calendrier", icon: CalendarRange },
   { href: "/proprietaire/statistiques", label: "Statistiques", icon: BarChart3 },
   { href: "/proprietaire/amendes", label: "Amendes", icon: TriangleAlert },
+  { href: "/proprietaire/notifications", label: "Notifications", icon: Bell },
   { href: "/proprietaire/parametres", label: "Paramètres", icon: Settings },
 ];
 
@@ -77,6 +79,12 @@ export default async function ProprietaireLayout({
     .eq("proprietaire_id", proprietaireId)
     .eq("statut", "en_attente");
 
+  const { count: nbNotifsNonLues } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("destinataire_id", proprietaireId)
+    .is("lu_le", null);
+
   const verifie = proprietaire.statut_verification === "verifie";
   const initiales = `${profile.prenom?.[0] ?? ""}${profile.nom?.[0] ?? ""}`.toUpperCase();
 
@@ -117,7 +125,13 @@ export default async function ProprietaireLayout({
               key={item.href}
               href={item.href}
               icon={<item.icon size={18} strokeWidth={1.75} />}
-              badge={item.href === "/proprietaire/reservations" ? nbEnAttente ?? 0 : undefined}
+              badge={
+                item.href === "/proprietaire/reservations"
+                  ? nbEnAttente ?? 0
+                  : item.href === "/proprietaire/notifications"
+                  ? nbNotifsNonLues ?? 0
+                  : undefined
+              }
             >
               {item.label}
             </NavLink>
