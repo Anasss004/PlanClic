@@ -12,6 +12,7 @@ import {
   Sparkles,
   Megaphone,
   SlidersHorizontal,
+  FileSpreadsheet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { seDeconnecter } from "@/app/actions/auth";
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/admin/plans", label: "Plans", icon: Package },
   { href: "/admin/abonnements", label: "Abonnements", icon: CreditCard },
   { href: "/admin/annonces", label: "Annonces", icon: Megaphone },
+  { href: "/admin/exports", label: "Exports", icon: FileSpreadsheet },
   { href: "/admin/roles", label: "Rôles", icon: KeyRound, adminOnly: true },
   {
     href: "/admin/parametres-plateforme",
