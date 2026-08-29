@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { exigerStaffAction } from "@/lib/admin/auth";
 
 export async function validerProprietaire(
   proprietaireId: string,
@@ -147,4 +148,41 @@ export async function assignerPlan(proprietaireId: string, planId: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/abonnements");
+  revalidatePath(`/admin/agences/${proprietaireId}`);
+}
+
+// ------------------------------------------------------------
+// Fiche agence — activer / désactiver un compte (suppression
+// logique réversible) et envoyer un message in-app.
+// ------------------------------------------------------------
+export async function definirActifAgence(proprietaireId: string, actif: boolean) {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_definir_actif_agence", {
+    p_proprietaire_id: proprietaireId,
+    p_actif: actif,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/agences/${proprietaireId}`);
+  revalidatePath("/admin/utilisateurs");
+}
+
+export async function envoyerMessageProprietaire(
+  proprietaireId: string,
+  titre: string,
+  message: string
+) {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_notifier_proprietaire", {
+    p_proprietaire_id: proprietaireId,
+    p_titre: titre,
+    p_message: message,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/agences/${proprietaireId}`);
 }

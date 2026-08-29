@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import EmptyState from "@/components/ui/EmptyState";
@@ -59,7 +60,12 @@ export default async function AdminAbonnementsPage() {
                 }`}
               >
                 <div>
-                  <p className="text-sm font-semibold text-dash-text">{p.nom_entreprise}</p>
+                  <Link
+                    href={`/admin/agences/${p.id}`}
+                    className="text-sm font-semibold text-dash-text underline decoration-dash-border underline-offset-2 hover:decoration-dash-dark"
+                  >
+                    {p.nom_entreprise}
+                  </Link>
                   <div className="mt-1 flex items-center gap-2">
                     <Badge variant={p.statut_verification === "verifie" ? "success" : "warning"}>
                       {p.statut_verification === "verifie" ? "Vérifié" : "En attente"}

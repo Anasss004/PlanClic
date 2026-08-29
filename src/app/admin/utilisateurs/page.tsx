@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import EmptyState from "@/components/ui/EmptyState";
@@ -43,7 +44,18 @@ export default async function UtilisateursPage() {
               {utilisateurs.map((u) => (
                 <tr key={u.id} className="border-b border-dash-border last:border-0">
                   <td className="px-5 py-3 font-medium text-dash-text">
-                    {u.prenom} {u.nom}
+                    {u.role === "proprietaire" ? (
+                      <Link
+                        href={`/admin/agences/${u.id}`}
+                        className="text-dash-dark underline decoration-dash-border underline-offset-2 hover:decoration-dash-dark"
+                      >
+                        {u.prenom} {u.nom}
+                      </Link>
+                    ) : (
+                      <>
+                        {u.prenom} {u.nom}
+                      </>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-dash-text-secondary">{u.email}</td>
                   <td className="px-5 py-3 text-dash-text-secondary">{u.telephone ?? "—"}</td>
