@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { exigerStaffAction } from "@/lib/admin/auth";
+import { exigerStaffAction, exigerAdminAction } from "@/lib/admin/auth";
 
 export async function validerProprietaire(
   proprietaireId: string,
@@ -212,4 +212,45 @@ export async function envoyerMessageProprietaire(
 
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/agences/${proprietaireId}`);
+}
+
+// ------------------------------------------------------------
+// Paramètres globaux de la plateforme — réservé admin (RPC
+// admin_definir_parametre revérifie aussi le rôle).
+// ------------------------------------------------------------
+export async function definirParametrePlateforme(cle: string, valeur: unknown) {
+  await exigerAdminAction();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_definir_parametre", {
+    p_cle: cle,
+    p_valeur: valeur,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/parametres-plateforme");
+}
+
+// ------------------------------------------------------------
+// Centre de notifications — diffusion d'une annonce (staff).
+// ------------------------------------------------------------
+export async function diffuserAnnonce(
+  titre: string,
+  message: string,
+  cible: "tous" | "plan",
+  filtrePlanId?: string
+): Promise<number> {
+  await exigerStaffAction();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_diffuser_notification", {
+    p_titre: titre,
+    p_message: message,
+    p_cible: cible,
+    p_filtre_plan_id: filtrePlanId ?? null,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/annonces");
+  return (data as number) ?? 0;
 }
