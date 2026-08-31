@@ -2,6 +2,7 @@ import { ClipboardList, Car, Calendar, MessageCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
 import ActionsReservation from "@/components/proprietaire/ActionsReservation";
+import ContratLocation from "@/components/proprietaire/ContratLocation";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import { construireLienWhatsApp } from "@/lib/whatsapp";
@@ -17,16 +18,27 @@ const STATUTS: Record<
   terminee: { label: "Terminée", variant: "info", barre: "bg-[#6bb8e0]" },
 };
 
-export default async function ReservationsPage() {
+const MESSAGES: Record<string, string> = {
+  "location-creee": "Location enregistrée et contrat généré.",
+  "location-creee-sans-contrat":
+    "Location enregistrée. Le contrat n'a pas pu être généré — utilise « Générer le contrat » ci-dessous.",
+};
+
+export default async function ReservationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string }>;
+}) {
+  const sp = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { id: pid } = await resoudreProprietaireId(user!.id);
+  const { id: pid, impersonation } = await resoudreProprietaireId(user!.id);
 
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("id, date_debut, date_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, vehicule_id, client_id, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)")
+    .select("id, date_debut, date_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, contrat_url, photos_etat_vehicule, vehicule_id, client_id, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)")
     .eq("proprietaire_id", pid)
     .order("created_at", { ascending: false });
 
@@ -38,6 +50,12 @@ export default async function ReservationsPage() {
           {reservations?.length ?? 0} réservation(s) au total
         </p>
       </div>
+
+      {sp.message && MESSAGES[sp.message] && (
+        <p className="mb-6 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
+          {MESSAGES[sp.message]}
+        </p>
+      )}
 
       {!reservations || reservations.length === 0 ? (
         <EmptyState
@@ -116,6 +134,14 @@ export default async function ReservationsPage() {
                       ? "Demander CIN/passeport sur WhatsApp"
                       : "Contacter sur WhatsApp"}
                   </a>
+                )}
+
+                {r.source === "manuel" && !impersonation && r.statut !== "annulee" && (
+                  <ContratLocation
+                    reservationId={r.id}
+                    contratGenere={!!r.contrat_url}
+                    nbPhotos={r.photos_etat_vehicule?.length ?? 0}
+                  />
                 )}
 
                 <div className="flex items-center justify-between border-t border-dash-border pt-3">
