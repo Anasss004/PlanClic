@@ -530,6 +530,11 @@ export async function creerLocationManuelle(formData: FormData) {
   const prixRaw = (formData.get("prix_total") as string) || "";
   const prixTotal = prixRaw ? Number(prixRaw) : null;
 
+  const heureDebut = ((formData.get("heure_debut") as string) || "").trim() || null;
+  const lieuDebut = ((formData.get("lieu_debut") as string) || "").trim() || null;
+  const heureFin = ((formData.get("heure_fin") as string) || "").trim() || null;
+  const lieuFin = ((formData.get("lieu_fin") as string) || "").trim() || null;
+
   if (!vehiculeId || !dateDebut || !dateFin || !nomClient) {
     redirect("/proprietaire/bloquer?erreur=champs-manquants");
   }
@@ -561,6 +566,10 @@ export async function creerLocationManuelle(formData: FormData) {
       p_cin_client: cinClient,
       p_prix_total: prixTotal,
       p_photos_etat: cheminsPhotos,
+      p_heure_debut: heureDebut,
+      p_lieu_debut: lieuDebut,
+      p_heure_fin: heureFin,
+      p_lieu_fin: lieuFin,
     }
   );
 
@@ -598,7 +607,7 @@ async function genererContratLocation(reservationId: string) {
   const { data: r } = await supabase
     .from("reservations")
     .select(
-      "id, date_debut, date_fin, prix_total, nom_client_manuel, telephone_client_manuel, cin_client_manuel, photos_etat_vehicule, proprietaire_id, source, vehicules(marque, modele, immatriculation)"
+      "id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, prix_total, nom_client_manuel, telephone_client_manuel, cin_client_manuel, photos_etat_vehicule, proprietaire_id, source, vehicules(marque, modele, immatriculation)"
     )
     .eq("id", reservationId)
     .single();
@@ -638,6 +647,10 @@ async function genererContratLocation(reservationId: string) {
     },
     dateDebut: r.date_debut,
     dateFin: r.date_fin,
+    heureDebut: r.heure_debut ?? null,
+    lieuDebut: r.lieu_debut ?? null,
+    heureFin: r.heure_fin ?? null,
+    lieuFin: r.lieu_fin ?? null,
     prixTotal: r.prix_total ?? null,
     photos,
     genereLe: new Date(),

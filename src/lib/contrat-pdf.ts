@@ -1,6 +1,7 @@
 import "server-only";
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { formaterDate, formaterHeure, nombreDeJours } from "@/lib/dates";
 
 // ============================================================
 // Génération du contrat de location (V1, sans signature électronique).
@@ -30,6 +31,10 @@ export type DonneesContrat = {
   vehicule: { marque: string; modele: string; immatriculation: string };
   dateDebut: string;
   dateFin: string;
+  heureDebut?: string | null;
+  lieuDebut?: string | null;
+  heureFin?: string | null;
+  lieuFin?: string | null;
   prixTotal: number | null;
   photos: { bytes: Uint8Array; type: "image/jpeg" | "image/png" }[];
   genereLe: Date;
@@ -47,21 +52,6 @@ function nettoyerTexte(t: string): string {
     .replace(/ /g, " ")
     // tout ce qui reste hors Latin-1 imprimable -> "?"
     .replace(/[^\x20-\x7E\xA0-\xFF]/g, "?");
-}
-
-function formatDateFr(iso: string): string {
-  const d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function nombreDeJours(debut: string, fin: string): number {
-  const d1 = new Date(debut + "T00:00:00").getTime();
-  const d2 = new Date(fin + "T00:00:00").getTime();
-  return Math.max(1, Math.round((d2 - d1) / 86400000));
 }
 
 function couperEnLignes(
@@ -165,9 +155,14 @@ export async function construireContratPdf(
   ]);
 
   const jours = nombreDeJours(d.dateDebut, d.dateFin);
+  const avecHeure = (dateIso: string, heure?: string | null) =>
+    heure ? `${formaterDate(dateIso)} a ${formaterHeure(heure)}` : formaterDate(dateIso);
+
   section("Location", [
-    ["Du", formatDateFr(d.dateDebut)],
-    ["Au", formatDateFr(d.dateFin)],
+    ["Prise en charge", avecHeure(d.dateDebut, d.heureDebut)],
+    ...(d.lieuDebut ? ([["Lieu de depart", d.lieuDebut]] as [string, string][]) : []),
+    ["Restitution", avecHeure(d.dateFin, d.heureFin)],
+    ...(d.lieuFin ? ([["Lieu de retour", d.lieuFin]] as [string, string][]) : []),
     ["Duree", `${jours} jour${jours > 1 ? "s" : ""}`],
     [
       "Prix total",
