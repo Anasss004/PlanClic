@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Check, X, ExternalLink } from "lucide-react";
 import { validerProprietaire, obtenirUrlDocumentSigne } from "@/app/actions/admin";
+import { redirigerFenetre } from "@/lib/fenetre";
 import { useToast } from "@/components/ui/Toast";
 
 export default function ActionsVerificationProprietaire({
@@ -49,13 +50,19 @@ export default function ActionsVerificationProprietaire({
 export function VoirDocument({ storagePath }: { storagePath: string }) {
   const toast = useToast();
 
-  async function ouvrir() {
-    try {
-      const url = await obtenirUrlDocumentSigne(storagePath);
-      window.open(url, "_blank");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Impossible d'ouvrir le document.");
-    }
+  function ouvrir() {
+    // Fenêtre ouverte SYNCHRONEMENT (avant l'await) pour éviter le
+    // blocage de pop-up (Safari notamment), puis redirigée.
+    const fenetre = window.open("", "_blank");
+    void (async () => {
+      try {
+        const url = await obtenirUrlDocumentSigne(storagePath);
+        redirigerFenetre(fenetre, url);
+      } catch (e) {
+        fenetre?.close();
+        toast.error(e instanceof Error ? e.message : "Impossible d'ouvrir le document.");
+      }
+    })();
   }
 
   return (

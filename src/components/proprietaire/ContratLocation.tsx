@@ -7,6 +7,7 @@ import {
   obtenirLienContrat,
   obtenirLienContratWhatsApp,
 } from "@/app/actions/proprietaire";
+import { redirigerFenetre } from "@/lib/fenetre";
 import { useToast } from "@/components/ui/Toast";
 
 export default function ContratLocation({
@@ -22,22 +23,28 @@ export default function ContratLocation({
   const toast = useToast();
 
   function voir() {
+    // Fenêtre ouverte SYNCHRONEMENT (avant tout await) pour ne pas être
+    // bloquée par le navigateur, puis redirigée vers l'URL signée.
+    const fenetre = window.open("", "_blank");
     startTransition(async () => {
       try {
         const url = await obtenirLienContrat(reservationId);
-        window.open(url, "_blank", "noopener,noreferrer");
+        redirigerFenetre(fenetre, url);
       } catch (e) {
+        fenetre?.close();
         toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
   }
 
   function envoyerWhatsApp() {
+    const fenetre = window.open("", "_blank");
     startTransition(async () => {
       try {
         const lien = await obtenirLienContratWhatsApp(reservationId);
-        window.open(lien, "_blank", "noopener,noreferrer");
+        redirigerFenetre(fenetre, lien);
       } catch (e) {
+        fenetre?.close();
         toast.error(e instanceof Error ? e.message : "Erreur.");
       }
     });
