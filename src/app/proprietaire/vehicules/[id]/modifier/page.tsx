@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { modifierVehicule } from "@/app/actions/proprietaire";
 import FileUpload from "@/components/ui/FileUpload";
+import GestionPhotosVehicule from "@/components/proprietaire/GestionPhotosVehicule";
 
 export default async function ModifierVehiculePage({
   params,
@@ -43,20 +44,11 @@ export default async function ModifierVehiculePage({
       >
         <div>
           <label className="mb-1 block text-sm font-semibold text-brand-dark">Photos</label>
-          {vehicule.photos?.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-2">
-              {vehicule.photos.map((url: string, i: number) => (
-                <div key={i} className="h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          )}
+          <GestionPhotosVehicule vehiculeId={id} photos={vehicule.photos ?? []} />
           <p className="mb-2 text-xs text-[#6a6a6a]">
-            {vehicule.photos?.length > 0
-              ? "Les nouvelles photos s'ajouteront à celles déjà en ligne."
-              : "Aucune photo pour l'instant."}
+            Survole une photo pour la supprimer ou la mettre en couverture (la
+            photo de couverture s&apos;affiche en premier sur les annonces). Les
+            nouvelles photos ci-dessous s&apos;ajoutent aux existantes.
           </p>
           <FileUpload name="photos" accept="image/*" multiple theme="brand" />
         </div>

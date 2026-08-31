@@ -358,6 +358,71 @@ export async function basculerStatutVehicule(vehiculeId: string, statutActuel: s
 }
 
 // ------------------------------------------------------------
+// Gestion des photos d'un véhicule (suppression individuelle,
+// choix de la photo de couverture = 1re du tableau).
+// L'UPDATE reste soumis à la policy "vehicules_update_owner".
+// ------------------------------------------------------------
+async function chargerPhotos(supabase: Awaited<ReturnType<typeof createClient>>, vehiculeId: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+
+  const { data: vehicule } = await supabase
+    .from("vehicules")
+    .select("photos, proprietaire_id")
+    .eq("id", vehiculeId)
+    .single();
+
+  if (!vehicule) throw new Error("Véhicule introuvable");
+  if (vehicule.proprietaire_id !== user.id) throw new Error("Action non autorisée");
+  return (vehicule.photos ?? []) as string[];
+}
+
+export async function supprimerPhotoVehicule(vehiculeId: string, url: string) {
+  const supabase = await createClient();
+  const photos = await chargerPhotos(supabase, vehiculeId);
+  const restantes = photos.filter((p) => p !== url);
+
+  const { error } = await supabase
+    .from("vehicules")
+    .update({ photos: restantes })
+    .eq("id", vehiculeId);
+  if (error) throw new Error(error.message);
+
+  // Suppression best-effort du fichier dans le bucket public (pas de
+  // policy DELETE sur photos-vehicules — un éventuel orphelin reste
+  // inoffensif, jamais listé).
+  try {
+    const chemin = url.split("/photos-vehicules/")[1];
+    if (chemin) await supabase.storage.from("photos-vehicules").remove([chemin]);
+  } catch {
+    // ignore
+  }
+
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}/modifier`);
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
+  revalidatePath("/proprietaire/vehicules");
+}
+
+export async function definirPhotoCouverture(vehiculeId: string, url: string) {
+  const supabase = await createClient();
+  const photos = await chargerPhotos(supabase, vehiculeId);
+  if (!photos.includes(url)) return;
+  const reordonnees = [url, ...photos.filter((p) => p !== url)];
+
+  const { error } = await supabase
+    .from("vehicules")
+    .update({ photos: reordonnees })
+    .eq("id", vehiculeId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}/modifier`);
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
+  revalidatePath("/proprietaire/vehicules");
+}
+
+// ------------------------------------------------------------
 // Supprimer un véhicule (suppression logique — deleted_at)
 // ------------------------------------------------------------
 export async function supprimerVehicule(vehiculeId: string) {

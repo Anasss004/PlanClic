@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Plus, Car, Wrench, TrendingUp, FilePlus2 } from "lucide-react";
+import { Plus, Car } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
 import EmptyState from "@/components/ui/EmptyState";
-import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
+import ListeVehicules from "@/components/proprietaire/ListeVehicules";
 
 export default async function VehiculesPage() {
   const supabase = await createClient();
@@ -31,12 +31,9 @@ export default async function VehiculesPage() {
     .eq("proprietaire_id", pid)
     .eq("statut", "terminee");
 
-  const revenuParVehicule = new Map<string, number>();
+  const revenus: Record<string, number> = {};
   (reservationsTerminees ?? []).forEach((r) => {
-    revenuParVehicule.set(
-      r.vehicule_id,
-      (revenuParVehicule.get(r.vehicule_id) ?? 0) + (r.prix_total ?? 0)
-    );
+    revenus[r.vehicule_id] = (revenus[r.vehicule_id] ?? 0) + (r.prix_total ?? 0);
   });
 
   // Dernier entretien connu par véhicule (donnée réelle uniquement,
@@ -50,10 +47,10 @@ export default async function VehiculesPage() {
         .order("date_intervention", { ascending: false })
     : { data: [] };
 
-  const dernierEntretienParVehicule = new Map<string, string>();
+  const derniersEntretiens: Record<string, string> = {};
   (dernieresMaintenances ?? []).forEach((m) => {
-    if (!dernierEntretienParVehicule.has(m.vehicule_id)) {
-      dernierEntretienParVehicule.set(m.vehicule_id, m.date_intervention);
+    if (!derniersEntretiens[m.vehicule_id]) {
+      derniersEntretiens[m.vehicule_id] = m.date_intervention;
     }
   });
 
@@ -106,104 +103,11 @@ export default async function VehiculesPage() {
           }
         />
       ) : (
-        <div className="space-y-3">
-          {vehicules.map((v) => {
-            const revenu = revenuParVehicule.get(v.id) ?? 0;
-            const dernierEntretien = dernierEntretienParVehicule.get(v.id);
-            return (
-              <div
-                key={v.id}
-                className="group flex items-center gap-4 rounded-xl border border-white/30 bg-white p-3 shadow-[0px_4px_20px_rgba(18,53,68,0.05)] transition-shadow hover:shadow-[0px_8px_24px_rgba(18,53,68,0.1)] sm:gap-6 sm:p-4"
-              >
-                {/* Photo */}
-                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-[#eeeeef] sm:h-24 sm:w-32">
-                  {v.photos?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={v.photos[0]}
-                      alt={`${v.marque} ${v.modele}`}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <Car size={28} strokeWidth={1.25} className="text-dash-dark/30" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Infos principales */}
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}`}
-                    className="truncate text-lg font-semibold text-dash-text hover:text-dash-dark hover:underline sm:text-xl"
-                  >
-                    {v.marque} {v.modele}
-                  </Link>
-                  <p className="font-mono text-xs text-dash-text-secondary sm:text-sm">
-                    {v.immatriculation}
-                  </p>
-
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    {revenu > 0 && (
-                      <span className="flex items-center gap-1 text-xs font-medium text-[#006c4a]">
-                        <TrendingUp size={12} strokeWidth={2} />
-                        {revenu.toLocaleString("fr-FR")} MAD générés
-                      </span>
-                    )}
-                    {dernierEntretien && (
-                      <span className="hidden items-center gap-1 text-xs text-dash-text-secondary sm:flex">
-                        <Wrench size={12} strokeWidth={1.75} />
-                        Entretien : {dernierEntretien}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Statut + prix */}
-                <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${
-                      v.statut === "actif"
-                        ? "border-dash-accent/30 bg-dash-accent/20 text-[#7b5900]"
-                        : "border-gray-300 bg-gray-50 text-gray-500"
-                    }`}
-                  >
-                    {v.statut === "actif" ? "Disponible" : "Inactif"}
-                  </span>
-                  <p className="text-lg font-semibold text-dash-dark">
-                    {v.prix_jour}
-                    <span className="text-sm font-normal text-dash-text-secondary"> DH/j</span>
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href={`/proprietaire/bloquer?vehicule=${v.id}`}
-                    title="Enregistrer une location pour ce véhicule"
-                    className="flex items-center gap-1.5 rounded-lg bg-dash-accent px-3 py-2 text-sm font-bold text-dash-text shadow-sm transition hover:brightness-95"
-                  >
-                    <FilePlus2 size={14} strokeWidth={2.5} />
-                    <span className="hidden lg:inline">Nouvelle location</span>
-                  </Link>
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}`}
-                    className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
-                  >
-                    Voir
-                  </Link>
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}/modifier`}
-                    className="hidden rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark sm:block"
-                  >
-                    Modifier
-                  </Link>
-                  <MenuActionsVehicule vehiculeId={v.id} statut={v.statut} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <ListeVehicules
+          vehicules={vehicules}
+          revenus={revenus}
+          derniersEntretiens={derniersEntretiens}
+        />
       )}
     </div>
   );
