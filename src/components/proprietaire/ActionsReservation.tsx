@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, X, FlagOff } from "lucide-react";
 import { traiterReservation } from "@/app/actions/proprietaire";
 import { useToast } from "@/components/ui/Toast";
@@ -20,8 +21,26 @@ export default function ActionsReservation({
 }) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const router = useRouter();
 
   function agir(nouveauStatut: "confirmee" | "refusee" | "terminee") {
+    // "Terminée" : action à risque -> délai de grâce de 5 s (undo).
+    if (nouveauStatut === "terminee") {
+      toast.undoable(
+        LABELS_SUCCES.terminee,
+        async () => {
+          try {
+            await traiterReservation(reservationId, "terminee");
+            router.refresh();
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Action impossible.");
+          }
+        },
+        { onCancel: () => toast.info("Annulé.") }
+      );
+      return;
+    }
+
     startTransition(async () => {
       try {
         await traiterReservation(reservationId, nouveauStatut);

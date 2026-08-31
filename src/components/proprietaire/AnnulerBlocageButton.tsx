@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { annulerBlocage } from "@/app/actions/proprietaire";
 import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 export default function AnnulerBlocageButton({
   reservationId,
@@ -13,9 +14,15 @@ export default function AnnulerBlocageButton({
 }) {
   const [isPending, startTransition] = useTransition();
   const toast = useToast();
+  const confirmer = useConfirm();
 
-  function annuler() {
-    if (!confirm("Débloquer ces dates ?")) return;
+  async function annuler() {
+    const ok = await confirmer({
+      titre: "Débloquer ces dates ?",
+      message: "Le créneau redeviendra disponible à la réservation.",
+      labelConfirmer: "Débloquer",
+    });
+    if (!ok) return;
     startTransition(async () => {
       try {
         await annulerBlocage(reservationId, vehiculeId);

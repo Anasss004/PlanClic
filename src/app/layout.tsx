@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Bagel_Fat_One, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "@/components/ui/Toast";
+import ConfirmProvider from "@/components/ui/ConfirmDialog";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${bagelFatOne.variable} ${plusJakarta.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
       </body>
     </html>
   );

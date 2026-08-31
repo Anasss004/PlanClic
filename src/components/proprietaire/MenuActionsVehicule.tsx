@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MoreVertical, Pencil, Eye, EyeOff, Eye as EyeOn, Trash2 } from "lucide-react";
 import { basculerStatutVehicule, supprimerVehicule } from "@/app/actions/proprietaire";
 import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 export default function MenuActionsVehicule({
   vehiculeId,
@@ -18,6 +19,7 @@ export default function MenuActionsVehicule({
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const toast = useToast();
+  const confirmer = useConfirm();
 
   useEffect(() => {
     function fermerSiExterieur(e: MouseEvent) {
@@ -50,18 +52,30 @@ export default function MenuActionsVehicule({
     });
   }
 
-  function supprimer() {
+  async function supprimer() {
     setOuvert(false);
-    if (!confirm("Supprimer ce véhicule ? Cette action est définitive.")) return;
-    startTransition(async () => {
-      try {
-        await supprimerVehicule(vehiculeId);
-        toast.success("Véhicule supprimé.");
-        router.refresh();
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Erreur.");
-      }
+    const ok = await confirmer({
+      titre: "Supprimer ce véhicule ?",
+      message:
+        "Le véhicule sera retiré de vos annonces. Ses réservations passées restent conservées.",
+      labelConfirmer: "Supprimer",
+      danger: true,
     });
+    if (!ok) return;
+
+    // Délai de grâce : 5 s pour annuler avant l'application définitive.
+    toast.undoable(
+      "Véhicule supprimé",
+      async () => {
+        try {
+          await supprimerVehicule(vehiculeId);
+          router.refresh();
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Suppression impossible.");
+        }
+      },
+      { onCancel: () => toast.info("Suppression annulée.") }
+    );
   }
 
   return (
