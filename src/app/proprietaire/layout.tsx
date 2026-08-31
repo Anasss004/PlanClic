@@ -85,6 +85,18 @@ export default async function ProprietaireLayout({
     .eq("destinataire_id", proprietaireId)
     .is("lu_le", null);
 
+  // Documents véhicule qui expirent sous 30 j — comptés dans la pastille
+  // "Notifications" (les demandes en attente ont déjà leur propre pastille).
+  const dans30j = new Date();
+  dans30j.setDate(dans30j.getDate() + 30);
+  const { count: nbDocsExpirant } = await supabase
+    .from("documents_vehicule")
+    .select("*", { count: "exact", head: true })
+    .eq("proprietaire_id", proprietaireId)
+    .lte("date_expiration", dans30j.toISOString().slice(0, 10));
+
+  const badgeNotifs = (nbNotifsNonLues ?? 0) + (nbDocsExpirant ?? 0);
+
   const verifie = proprietaire.statut_verification === "verifie";
   const initiales = `${profile.prenom?.[0] ?? ""}${profile.nom?.[0] ?? ""}`.toUpperCase();
 
@@ -141,7 +153,7 @@ export default async function ProprietaireLayout({
                 item.href === "/proprietaire/reservations"
                   ? nbEnAttente ?? 0
                   : item.href === "/proprietaire/notifications"
-                  ? nbNotifsNonLues ?? 0
+                  ? badgeNotifs
                   : undefined
               }
             >
