@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { validerFichier } from "@/lib/validation-fichiers";
+import { construireContratPdf } from "@/lib/contrat-pdf";
+import { construireLienWhatsApp } from "@/lib/whatsapp";
 
 // Génère un chemin de stockage non prévisible, jamais basé sur
 // nom/CIN/tel/email — conforme aux règles de sécurité du projet.
@@ -496,4 +498,240 @@ export async function modifierProprietaire(formData: FormData) {
 
   revalidatePath("/proprietaire/parametres");
   redirect("/proprietaire/parametres?message=enregistre");
+}
+
+// ============================================================
+// Module "Gestion de location + Contrat" (V1)
+// ============================================================
+
+// ------------------------------------------------------------
+// Nouvelle location manuelle (canal externe : téléphone, Instagram,
+// agence physique). Étend "Bloquer un véhicule" : CIN/passeport,
+// prix, photos d'état des lieux, puis génération du contrat PDF.
+//
+// L'insertion passe par la fonction SECURITY DEFINER
+// creer_location_manuelle() qui revérifie que l'appelant est bien le
+// propriétaire du véhicule.
+// ------------------------------------------------------------
+export async function creerLocationManuelle(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
+  const vehiculeId = formData.get("vehicule_id") as string;
+  const dateDebut = formData.get("date_debut") as string;
+  const dateFin = formData.get("date_fin") as string;
+  const nomClient = ((formData.get("nom_client") as string) || "").trim();
+  const telephoneClient =
+    ((formData.get("telephone_client") as string) || "").trim() || null;
+  const cinClient = ((formData.get("cin_client") as string) || "").trim() || null;
+  const prixRaw = (formData.get("prix_total") as string) || "";
+  const prixTotal = prixRaw ? Number(prixRaw) : null;
+
+  if (!vehiculeId || !dateDebut || !dateFin || !nomClient) {
+    redirect("/proprietaire/bloquer?erreur=champs-manquants");
+  }
+
+  // Upload des photos d'état des lieux dans le bucket privé
+  // documents-prives — validation par signature binaire réelle, jamais
+  // le type déclaré par le navigateur.
+  const photos = formData.getAll("photos_etat") as File[];
+  const cheminsPhotos: string[] = [];
+  for (const photo of photos) {
+    if (!photo || photo.size === 0) continue;
+    const validation = await validerFichier(photo, ["image/jpeg", "image/png"]);
+    if (!validation.valide) continue; // fichier ignoré, non bloquant
+    const chemin = cheminAleatoire(user.id, photo.type);
+    const { error } = await supabase.storage
+      .from("documents-prives")
+      .upload(chemin, photo);
+    if (!error) cheminsPhotos.push(chemin);
+  }
+
+  const { data: nouvelId, error } = await supabase.rpc(
+    "creer_location_manuelle",
+    {
+      p_vehicule_id: vehiculeId,
+      p_date_debut: dateDebut,
+      p_date_fin: dateFin,
+      p_nom_client: nomClient,
+      p_telephone_client: telephoneClient,
+      p_cin_client: cinClient,
+      p_prix_total: prixTotal,
+      p_photos_etat: cheminsPhotos,
+    }
+  );
+
+  if (error || !nouvelId) {
+    redirect("/proprietaire/bloquer?erreur=creation");
+  }
+
+  // Génération du contrat — non bloquante : si elle échoue, la location
+  // est déjà enregistrée et le contrat peut être régénéré depuis la
+  // page Réservations.
+  try {
+    await genererContratLocation(nouvelId as string);
+  } catch {
+    revalidatePath("/proprietaire/reservations");
+    redirect("/proprietaire/reservations?message=location-creee-sans-contrat");
+  }
+
+  revalidatePath("/proprietaire/reservations");
+  revalidatePath("/proprietaire/calendrier");
+  redirect("/proprietaire/reservations?message=location-creee");
+}
+
+// ------------------------------------------------------------
+// Génère le PDF du contrat, l'upload dans le bucket privé "contrats"
+// et enregistre son chemin (fn SECURITY DEFINER + journalisation).
+// Non exportée : appelée par creerLocationManuelle / regenererContrat.
+// ------------------------------------------------------------
+async function genererContratLocation(reservationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+
+  const { data: r } = await supabase
+    .from("reservations")
+    .select(
+      "id, date_debut, date_fin, prix_total, nom_client_manuel, telephone_client_manuel, cin_client_manuel, photos_etat_vehicule, proprietaire_id, source, vehicules(marque, modele, immatriculation)"
+    )
+    .eq("id", reservationId)
+    .single();
+
+  if (!r || r.source !== "manuel") throw new Error("Location introuvable");
+  if (r.proprietaire_id !== user.id) throw new Error("Action non autorisée");
+
+  const vehicule = Array.isArray(r.vehicules) ? r.vehicules[0] : r.vehicules;
+  if (!vehicule) throw new Error("Véhicule introuvable");
+
+  // Téléchargement des octets des photos (le propriétaire y a accès via
+  // la policy du bucket documents-prives).
+  const photos: { bytes: Uint8Array; type: "image/jpeg" | "image/png" }[] = [];
+  for (const chemin of r.photos_etat_vehicule ?? []) {
+    const { data: blob } = await supabase.storage
+      .from("documents-prives")
+      .download(chemin);
+    if (blob) {
+      photos.push({
+        bytes: new Uint8Array(await blob.arrayBuffer()),
+        type: chemin.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg",
+      });
+    }
+  }
+
+  const pdf = await construireContratPdf({
+    reservationId: r.id,
+    client: {
+      nom: r.nom_client_manuel ?? "",
+      telephone: r.telephone_client_manuel ?? null,
+      cin: r.cin_client_manuel ?? null,
+    },
+    vehicule: {
+      marque: vehicule.marque,
+      modele: vehicule.modele,
+      immatriculation: vehicule.immatriculation,
+    },
+    dateDebut: r.date_debut,
+    dateFin: r.date_fin,
+    prixTotal: r.prix_total ?? null,
+    photos,
+    genereLe: new Date(),
+  });
+
+  const chemin = `${user.id}/${reservationId}.pdf`;
+  const { error: erreurUpload } = await supabase.storage
+    .from("contrats")
+    .upload(chemin, pdf, { contentType: "application/pdf", upsert: true });
+  if (erreurUpload) throw new Error(erreurUpload.message);
+
+  const { error: erreurRpc } = await supabase.rpc(
+    "enregistrer_contrat_location",
+    { p_reservation_id: reservationId, p_contrat_url: chemin }
+  );
+  if (erreurRpc) throw new Error(erreurRpc.message);
+}
+
+export async function regenererContrat(reservationId: string) {
+  await genererContratLocation(reservationId);
+  revalidatePath("/proprietaire/reservations");
+}
+
+// ------------------------------------------------------------
+// Lien signé (courte durée relative : 7 jours, pour laisser au client
+// le temps d'ouvrir le lien reçu par WhatsApp) + message pré-rempli.
+// WhatsApp n'accepte pas de pièce jointe automatique : on envoie donc
+// un lien, jamais le fichier.
+// ------------------------------------------------------------
+export async function obtenirLienContratWhatsApp(reservationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+
+  const { data: r } = await supabase
+    .from("reservations")
+    .select(
+      "contrat_url, proprietaire_id, source, nom_client_manuel, telephone_client_manuel, date_debut, date_fin, vehicules(marque, modele)"
+    )
+    .eq("id", reservationId)
+    .single();
+
+  if (!r || r.source !== "manuel") throw new Error("Location introuvable");
+  if (r.proprietaire_id !== user.id) throw new Error("Action non autorisée");
+  if (!r.contrat_url) throw new Error("Aucun contrat généré pour cette location.");
+  if (!r.telephone_client_manuel)
+    throw new Error("Aucun numéro de téléphone enregistré pour ce client.");
+
+  const { data: signe, error } = await supabase.storage
+    .from("contrats")
+    .createSignedUrl(r.contrat_url, 60 * 60 * 24 * 7);
+  if (error || !signe) throw new Error("Impossible de générer le lien du contrat.");
+
+  await supabase.rpc("log_audit", {
+    p_action: "contrat.partage_whatsapp",
+    p_resource_type: "reservations",
+    p_resource_id: reservationId,
+    p_metadata: {},
+  });
+
+  const vehicule = Array.isArray(r.vehicules) ? r.vehicules[0] : r.vehicules;
+  const message =
+    `Bonjour ${r.nom_client_manuel}, voici votre contrat de location ` +
+    `pour ${vehicule?.marque ?? ""} ${vehicule?.modele ?? ""} ` +
+    `du ${r.date_debut} au ${r.date_fin} : ${signe.signedUrl}`;
+
+  return construireLienWhatsApp(r.telephone_client_manuel, message);
+}
+
+// ------------------------------------------------------------
+// Lien signé pour consultation directe du contrat par le propriétaire.
+// ------------------------------------------------------------
+export async function obtenirLienContrat(reservationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié");
+
+  const { data: r } = await supabase
+    .from("reservations")
+    .select("contrat_url, proprietaire_id")
+    .eq("id", reservationId)
+    .single();
+
+  if (!r?.contrat_url) throw new Error("Aucun contrat généré.");
+  if (r.proprietaire_id !== user.id) throw new Error("Action non autorisée.");
+
+  const { data: signe, error } = await supabase.storage
+    .from("contrats")
+    .createSignedUrl(r.contrat_url, 120);
+  if (error || !signe) throw new Error("Impossible de générer le lien.");
+
+  return signe.signedUrl;
 }

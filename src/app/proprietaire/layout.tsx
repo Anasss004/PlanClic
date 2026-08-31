@@ -9,7 +9,7 @@ import {
   Clock,
   ShieldAlert,
   Plus,
-  Ban,
+  FilePlus2,
   LifeBuoy,
   CalendarRange,
   BarChart3,
@@ -140,8 +140,8 @@ export default async function ProprietaireLayout({
             href="/proprietaire/bloquer"
             className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-normal text-dash-muted transition hover:bg-white/5"
           >
-            <Ban size={18} strokeWidth={1.75} />
-            Bloquer un véhicule
+            <FilePlus2 size={18} strokeWidth={1.75} />
+            Nouvelle location
           </Link>
         </nav>
       </div>
