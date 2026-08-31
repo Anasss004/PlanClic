@@ -1,4 +1,5 @@
-import { ClipboardList, Car, Calendar, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { ClipboardList, Car, Calendar, MessageCircle, Globe, Phone, FilePlus2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
 import ActionsReservation from "@/components/proprietaire/ActionsReservation";
@@ -6,6 +7,16 @@ import ContratLocation from "@/components/proprietaire/ContratLocation";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import { construireLienWhatsApp } from "@/lib/whatsapp";
+
+// Priorité d'affichage : ce qui demande une action passe en premier,
+// quelle que soit la source (en ligne ou manuelle).
+const PRIORITE_STATUT: Record<string, number> = {
+  en_attente: 0,
+  confirmee: 1,
+  terminee: 2,
+  refusee: 3,
+  annulee: 4,
+};
 
 const STATUTS: Record<
   string,
@@ -38,16 +49,32 @@ export default async function ReservationsPage({
 
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("id, date_debut, date_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, contrat_url, photos_etat_vehicule, vehicule_id, client_id, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)")
+    .select("id, date_debut, date_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, contrat_url, photos_etat_vehicule, vehicule_id, client_id, created_at, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)")
     .eq("proprietaire_id", pid)
     .order("created_at", { ascending: false });
+
+  // Un seul système : on trie toutes les réservations ensemble (en
+  // ligne + manuelles), les demandes à traiter d'abord.
+  const reservationsTriees = [...(reservations ?? [])].sort((a, b) => {
+    const pa = PRIORITE_STATUT[a.statut] ?? 9;
+    const pb = PRIORITE_STATUT[b.statut] ?? 9;
+    if (pa !== pb) return pa - pb;
+    return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+  });
+
+  const nbEnAttente = reservationsTriees.filter((r) => r.statut === "en_attente").length;
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
         <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Réservations</h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
-          {reservations?.length ?? 0} réservation(s) au total
+          {reservationsTriees.length} réservation(s) au total
+          {nbEnAttente > 0 && (
+            <span className="ml-2 font-semibold text-[#755400]">
+              · {nbEnAttente} en attente de réponse
+            </span>
+          )}
         </p>
       </div>
 
@@ -57,15 +84,24 @@ export default async function ReservationsPage({
         </p>
       )}
 
-      {!reservations || reservations.length === 0 ? (
+      {reservationsTriees.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
           title="Aucune réservation"
-          description="Les demandes de réservation de vos véhicules apparaîtront ici."
+          description="Enregistrez une location reçue hors ligne, ou attendez une demande via le site — les deux apparaîtront ici."
+          action={
+            <Link
+              href="/proprietaire/bloquer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2.5 text-sm font-bold text-dash-text shadow transition hover:brightness-95"
+            >
+              <FilePlus2 size={16} strokeWidth={2.5} />
+              Enregistrer ma première location
+            </Link>
+          }
         />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {reservations.map((r) => {
+          {reservationsTriees.map((r) => {
             const statut = STATUTS[r.statut] ?? { label: r.statut, variant: "neutral" as const, barre: "bg-gray-300" };
             const vehicule = Array.isArray(r.vehicules) ? r.vehicules[0] : r.vehicules;
             const profilClient = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
@@ -76,8 +112,11 @@ export default async function ReservationsPage({
               r.statut === "en_attente"
                 ? `Bonjour ${nomClient}, j'ai bien reçu votre demande de réservation pour ${vehicule?.marque} ${vehicule?.modele} ` +
                   `du ${r.date_debut} au ${r.date_fin}. Avant de confirmer, pouvez-vous m'envoyer une photo de votre CIN ou passeport ? Merci !`
-                : `Bonjour ${nomClient}, votre réservation pour ${vehicule?.marque} ${vehicule?.modele} ` +
-                  `du ${r.date_debut} au ${r.date_fin} est confirmée. À bientôt !`;
+                : r.statut === "confirmee"
+                ? `Bonjour ${nomClient}, votre réservation pour ${vehicule?.marque} ${vehicule?.modele} ` +
+                  `du ${r.date_debut} au ${r.date_fin} est confirmée. À bientôt !`
+                : `Bonjour ${nomClient}, au sujet de votre location ${vehicule?.marque} ${vehicule?.modele} ` +
+                  `du ${r.date_debut} au ${r.date_fin} :`;
 
             return (
               <div
@@ -88,9 +127,22 @@ export default async function ReservationsPage({
 
                 <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <p className="font-mono text-xs text-dash-text-secondary">
-                      #{r.id.slice(0, 8).toUpperCase()}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-xs text-dash-text-secondary">
+                        #{r.id.slice(0, 8).toUpperCase()}
+                      </p>
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-dash-text-secondary">
+                        {r.source === "manuel" ? (
+                          <>
+                            <Phone size={11} strokeWidth={2} /> Manuelle
+                          </>
+                        ) : (
+                          <>
+                            <Globe size={11} strokeWidth={2} /> En ligne
+                          </>
+                        )}
+                      </span>
+                    </div>
                     <p className="text-lg font-semibold text-dash-text">{nomClient}</p>
                   </div>
                   <Badge variant={statut.variant}>{statut.label}</Badge>
@@ -122,7 +174,7 @@ export default async function ReservationsPage({
                   </span>
                 </div>
 
-                {(r.statut === "en_attente" || r.statut === "confirmee") && telephoneClient && (
+                {telephoneClient && r.statut !== "refusee" && r.statut !== "annulee" && (
                   <a
                     href={construireLienWhatsApp(telephoneClient, messageWhatsApp)}
                     target="_blank"

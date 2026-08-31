@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Car, Wrench, TrendingUp } from "lucide-react";
+import { Plus, Car, Wrench, TrendingUp, FilePlus2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
 import EmptyState from "@/components/ui/EmptyState";
@@ -179,6 +179,14 @@ export default async function VehiculesPage() {
                 {/* Actions */}
                 <div className="flex shrink-0 items-center gap-2">
                   <Link
+                    href={`/proprietaire/bloquer?vehicule=${v.id}`}
+                    title="Enregistrer une location pour ce véhicule"
+                    className="flex items-center gap-1.5 rounded-lg bg-dash-accent px-3 py-2 text-sm font-bold text-dash-text shadow-sm transition hover:brightness-95"
+                  >
+                    <FilePlus2 size={14} strokeWidth={2.5} />
+                    <span className="hidden lg:inline">Nouvelle location</span>
+                  </Link>
+                  <Link
                     href={`/proprietaire/vehicules/${v.id}`}
                     className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
                   >
@@ -186,7 +194,7 @@ export default async function VehiculesPage() {
                   </Link>
                   <Link
                     href={`/proprietaire/vehicules/${v.id}/modifier`}
-                    className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
+                    className="hidden rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark sm:block"
                   >
                     Modifier
                   </Link>

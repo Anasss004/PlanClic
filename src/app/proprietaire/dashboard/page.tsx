@@ -8,6 +8,7 @@ import {
   TriangleAlert,
   ArrowRight,
   FileWarning,
+  FilePlus2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
@@ -93,13 +94,32 @@ export default async function DashboardProprietairePage() {
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
           Tableau de bord
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
           Vue d&apos;ensemble de votre activité sur PlanClic.
         </p>
+      </div>
+
+      {/* Accroche principale — enregistrer une location reçue hors ligne */}
+      <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-dash-accent/40 bg-dash-accent/10 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-base font-bold text-dash-dark">
+            Une location reçue par téléphone, Instagram ou en agence ?
+          </p>
+          <p className="mt-0.5 text-sm text-dash-text-secondary">
+            Enregistrez-la ici : les dates sont bloquées et le contrat est généré automatiquement.
+          </p>
+        </div>
+        <Link
+          href="/proprietaire/bloquer"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-dash-accent px-5 py-3 text-sm font-bold text-dash-text shadow-md transition hover:brightness-95"
+        >
+          <FilePlus2 size={17} strokeWidth={2.5} />
+          Enregistrer une nouvelle location
+        </Link>
       </div>
 
       {/* Cartes statistiques */}
@@ -154,7 +174,16 @@ export default async function DashboardProprietairePage() {
       {/* Actions rapides */}
       <div className="mt-8">
         <h2 className="mb-3 text-sm font-semibold text-dash-dark">Actions rapides</h2>
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ActionRapide
+            href="/proprietaire/bloquer"
+            icon={FilePlus2}
+            label="Nouvelle location"
+            primary
+          />
+          <ActionRapide href="/proprietaire/reservations" icon={ClipboardList} label="Voir les réservations" />
+          <ActionRapide href="/proprietaire/vehicules" icon={Car} label="Voir la flotte" />
+          <ActionRapide href="/proprietaire/amendes" icon={TriangleAlert} label="Consulter les amendes" />
           <ActionRapide
             href="/proprietaire/vehicules/nouveau"
             icon={Plus}
@@ -162,28 +191,33 @@ export default async function DashboardProprietairePage() {
             disabled={!verifie}
             disabledHint="Disponible une fois votre compte vérifié"
           />
-          <ActionRapide href="/proprietaire/reservations" icon={ClipboardList} label="Voir les réservations" />
-          <ActionRapide href="/proprietaire/vehicules" icon={Car} label="Voir la flotte" />
-          <ActionRapide href="/proprietaire/amendes" icon={TriangleAlert} label="Consulter les amendes" />
         </div>
       </div>
 
       {aucuneActivite ? (
         <div className="mt-8">
           <EmptyState
-            icon={Car}
+            icon={ClipboardList}
             title="Aucune activité pour l'instant"
-            description="Ajoutez votre premier véhicule pour commencer à recevoir des demandes de réservation."
+            description="Enregistrez une location reçue par téléphone, Instagram ou en agence — ou ajoutez d'abord un véhicule si votre flotte est vide."
             action={
-              verifie ? (
+              <div className="flex flex-col items-center gap-2">
                 <Link
-                  href="/proprietaire/vehicules/nouveau"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2 text-sm font-semibold text-dash-text"
+                  href="/proprietaire/bloquer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-dash-accent px-5 py-2.5 text-sm font-bold text-dash-text shadow transition hover:brightness-95"
                 >
-                  <Plus size={16} strokeWidth={2} />
-                  Ajouter un véhicule
+                  <FilePlus2 size={16} strokeWidth={2.5} />
+                  Enregistrer ma première location
                 </Link>
-              ) : undefined
+                {verifie && (
+                  <Link
+                    href="/proprietaire/vehicules/nouveau"
+                    className="text-xs font-medium text-dash-text-secondary underline underline-offset-2 hover:text-dash-dark"
+                  >
+                    Ajouter un véhicule
+                  </Link>
+                )}
+              </div>
             }
           />
         </div>
@@ -255,12 +289,14 @@ function ActionRapide({
   label,
   disabled,
   disabledHint,
+  primary,
 }: {
   href: string;
   icon: typeof Plus;
   label: string;
   disabled?: boolean;
   disabledHint?: string;
+  primary?: boolean;
 }) {
   if (disabled) {
     return (
@@ -277,7 +313,11 @@ function ActionRapide({
   return (
     <Link
       href={href}
-      className="group flex items-center justify-between gap-2.5 rounded-lg border border-dash-border bg-white px-4 py-3 text-sm font-medium text-dash-text-secondary shadow-[0px_4px_10px_rgba(43,76,91,0.05)] transition hover:border-dash-dark/30 hover:text-dash-dark"
+      className={`group flex items-center justify-between gap-2.5 rounded-lg border px-4 py-3 text-sm font-semibold shadow-[0px_4px_10px_rgba(43,76,91,0.05)] transition ${
+        primary
+          ? "border-dash-accent bg-dash-accent/20 text-dash-dark hover:brightness-95"
+          : "border-dash-border bg-white font-medium text-dash-text-secondary hover:border-dash-dark/30 hover:text-dash-dark"
+      }`}
     >
       <span className="flex items-center gap-2.5">
         <Icon size={16} strokeWidth={1.75} />

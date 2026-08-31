@@ -1,11 +1,11 @@
 import Link from "next/link";
 import {
   ArrowLeft,
-  Wallet,
   Wrench,
   FileWarning,
   CalendarClock,
   Plus,
+  FilePlus2,
   Car,
   Fuel,
   Gauge,
@@ -126,12 +126,21 @@ export default async function VehiculeDetailPage({
           <ArrowLeft size={15} strokeWidth={1.75} />
           Retour à la flotte
         </Link>
-        <Link
-          href={`/proprietaire/vehicules/${id}/modifier`}
-          className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary hover:bg-gray-50"
-        >
-          Modifier
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/proprietaire/bloquer?vehicule=${id}`}
+            className="flex items-center gap-1.5 rounded-lg bg-dash-accent px-4 py-2 text-sm font-bold text-dash-text shadow transition hover:brightness-95"
+          >
+            <FilePlus2 size={15} strokeWidth={2.5} />
+            Nouvelle location
+          </Link>
+          <Link
+            href={`/proprietaire/vehicules/${id}/modifier`}
+            className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary hover:bg-gray-50"
+          >
+            Modifier
+          </Link>
+        </div>
       </div>
 
       {sp.message && (
@@ -193,9 +202,17 @@ export default async function VehiculeDetailPage({
 
           {/* Bloquer le véhicule */}
           <div className="mt-6 rounded-xl border border-dash-border bg-white p-6 shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
-            <h2 className="mb-1 text-lg font-semibold text-dash-dark">Bloquer ce véhicule</h2>
+            <h2 className="mb-1 text-lg font-semibold text-dash-dark">Bloquer rapidement des dates</h2>
             <p className="mb-4 text-sm text-dash-text-secondary">
-              Réservation reçue par un autre moyen (téléphone, Instagram...) ? Bloque les dates ici.
+              Juste réserver le créneau, sans contrat ni photos. Pour une location
+              complète (état des lieux + contrat PDF), utilisez{" "}
+              <Link
+                href={`/proprietaire/bloquer?vehicule=${id}`}
+                className="font-medium text-dash-dark underline underline-offset-2"
+              >
+                Nouvelle location
+              </Link>
+              .
             </p>
             <form action={bloquerVehicule} className="grid gap-3 sm:grid-cols-5">
               <input type="hidden" name="vehicule_id" value={id} />

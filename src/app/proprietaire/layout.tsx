@@ -101,23 +101,35 @@ export default async function ProprietaireLayout({
           </div>
         </div>
 
-        {verifie ? (
+        {/* Action principale : enregistrer une location reçue hors ligne.
+            C'est le flux le plus utilisé pendant la phase de gestion interne. */}
+        <div className="mb-8 space-y-2">
           <Link
-            href="/proprietaire/vehicules/nouveau"
-            className="mb-8 flex items-center justify-center gap-2 rounded-lg bg-dash-accent px-4 py-3 text-sm font-semibold text-dash-text shadow transition hover:brightness-95"
+            href="/proprietaire/bloquer"
+            className="flex items-center justify-center gap-2 rounded-lg bg-dash-accent px-4 py-3.5 text-[15px] font-bold text-dash-text shadow-md transition hover:brightness-95"
           >
-            <Plus size={14} strokeWidth={2.5} />
-            Ajouter un véhicule
+            <FilePlus2 size={18} strokeWidth={2.5} />
+            Nouvelle location
           </Link>
-        ) : (
-          <div
-            title="Disponible une fois votre compte vérifié"
-            className="mb-8 flex cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-3 text-sm font-semibold text-white/30"
-          >
-            <Plus size={14} strokeWidth={2.5} />
-            Ajouter un véhicule
-          </div>
-        )}
+
+          {verifie ? (
+            <Link
+              href="/proprietaire/vehicules/nouveau"
+              className="flex items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-dash-muted transition hover:bg-white/5 hover:text-white"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Ajouter un véhicule
+            </Link>
+          ) : (
+            <div
+              title="Disponible une fois votre compte vérifié"
+              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium text-white/30"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Ajouter un véhicule
+            </div>
+          )}
+        </div>
 
         <nav className="space-y-2">
           {NAV.map((item) => (
@@ -136,13 +148,6 @@ export default async function ProprietaireLayout({
               {item.label}
             </NavLink>
           ))}
-          <Link
-            href="/proprietaire/bloquer"
-            className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-normal text-dash-muted transition hover:bg-white/5"
-          >
-            <FilePlus2 size={18} strokeWidth={1.75} />
-            Nouvelle location
-          </Link>
         </nav>
       </div>
 
