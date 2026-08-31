@@ -20,9 +20,13 @@ export default async function NotificationsProprietairePage() {
   } = await supabase.auth.getUser();
   const { id: pid, impersonation } = await resoudreProprietaireId(user!.id);
 
-  const dans30j = new Date();
+  const maintenant = new Date();
+  const dans30j = new Date(maintenant);
   dans30j.setDate(dans30j.getDate() + 30);
   const dans30jIso = dans30j.toISOString().slice(0, 10);
+  const ilYa60j = new Date(maintenant);
+  ilYa60j.setDate(ilYa60j.getDate() - 60);
+  const aujourdIso = maintenant.toISOString().slice(0, 10);
 
   const [
     { data: notifications },
@@ -86,7 +90,7 @@ export default async function NotificationsProprietairePage() {
 
   for (const d of docs ?? []) {
     const v = Array.isArray(d.vehicules) ? d.vehicules[0] : d.vehicules;
-    const expire = d.date_expiration < new Date().toISOString().slice(0, 10);
+    const expire = d.date_expiration < aujourdIso;
     elements.push({
       id: d.id,
       type: "document",
@@ -99,8 +103,7 @@ export default async function NotificationsProprietairePage() {
   }
 
   if (proprietaire?.statut_verification === "verifie" && proprietaire.verifie_le) {
-    const ilYaMoins60j =
-      Date.now() - new Date(proprietaire.verifie_le).getTime() < 60 * 86400000;
+    const ilYaMoins60j = new Date(proprietaire.verifie_le) > ilYa60j;
     if (ilYaMoins60j) {
       elements.push({
         id: "verification",

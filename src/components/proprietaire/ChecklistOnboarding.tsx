@@ -19,12 +19,16 @@ export default function ChecklistOnboarding({
 }) {
   const [masquee, setMasquee] = useState(true); // évite le flash avant lecture localStorage
 
+  // Lecture du choix "masquer" après montage (localStorage indisponible au SSR).
   useEffect(() => {
+    let valeur = false;
     try {
-      setMasquee(localStorage.getItem(CLE_MASQUE) === "1");
+      valeur = localStorage.getItem(CLE_MASQUE) === "1";
     } catch {
-      setMasquee(false);
+      valeur = false;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMasquee(valeur);
   }, []);
 
   const etapes: Etape[] = [
