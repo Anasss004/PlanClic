@@ -105,6 +105,15 @@ export default async function StatistiquesPage() {
   }
   const maxRevenu = Math.max(...revenuParMois, 1);
 
+  // Tendance CA mois courant vs mois précédent — affichée uniquement
+  // si le mois précédent a réellement des données.
+  const caMoisActuel = revenuParMois[5];
+  const caMoisPrecedent = revenuParMois[4];
+  const tendanceCa =
+    caMoisPrecedent > 0
+      ? Math.round(((caMoisActuel - caMoisPrecedent) / caMoisPrecedent) * 100)
+      : null;
+
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
@@ -117,7 +126,20 @@ export default async function StatistiquesPage() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Wallet} label="Chiffre d'affaires" value={`${caTotal.toLocaleString("fr-FR")} MAD`} variant="blue" />
+        <StatCard
+          icon={Wallet}
+          label="Chiffre d'affaires"
+          value={`${caTotal.toLocaleString("fr-FR")} MAD`}
+          variant="blue"
+          trend={
+            tendanceCa === null
+              ? undefined
+              : {
+                  direction: tendanceCa >= 0 ? "up" : "down",
+                  label: `${tendanceCa >= 0 ? "+" : ""}${tendanceCa}% ce mois-ci`,
+                }
+          }
+        />
         <StatCard icon={Gauge} label="Taux d'utilisation" value={`${tauxOccupation}%`} variant="gold" hint="30 derniers jours" />
         <StatCard icon={ClipboardList} label="Réservations totales" value={nbReservationsTotal} variant="gray" />
         <StatCard icon={Wrench} label="Documents à renouveler" value={documentsARenouveler ?? 0} variant="red" />

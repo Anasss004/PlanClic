@@ -12,9 +12,28 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
+import { formaterDate, formaterPeriode } from "@/lib/dates";
 import StatCard from "@/components/ui/StatCard";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
+import ChecklistOnboarding from "@/components/proprietaire/ChecklistOnboarding";
+
+// Somme des prix_total des réservations terminées dont created_at
+// tombe dans le mois indiqué (0 = mois courant, -1 = mois précédent).
+function caDuMois(
+  reservations: { statut: string; prix_total: number | null; created_at: string }[],
+  decalageMois: number
+) {
+  const ref = new Date();
+  ref.setMonth(ref.getMonth() + decalageMois);
+  return reservations
+    .filter((r) => {
+      if (r.statut !== "terminee") return false;
+      const d = new Date(r.created_at);
+      return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth();
+    })
+    .reduce((s, r) => s + (r.prix_total ?? 0), 0);
+}
 
 const LABELS_STATUT: Record<string, { label: string; variant: "warning" | "success" | "danger" | "info" | "neutral" }> = {
   en_attente: { label: "En attente", variant: "warning" },
@@ -44,19 +63,28 @@ export default async function DashboardProprietairePage() {
     .select("*", { count: "exact", head: true })
     .eq("proprietaire_id", pid);
 
-  const { count: nbEnAttente } = await supabase
+  // Toutes les réservations de l'agence (pour les compteurs + les
+  // vraies tendances mois / mois précédent).
+  const { data: toutesReservations } = await supabase
     .from("reservations")
-    .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", pid)
-    .eq("statut", "en_attente");
+    .select("statut, prix_total, created_at")
+    .eq("proprietaire_id", pid);
 
-  const { data: terminees } = await supabase
-    .from("reservations")
-    .select("prix_total")
-    .eq("proprietaire_id", pid)
-    .eq("statut", "terminee");
+  const resa = toutesReservations ?? [];
+  const nbEnAttente = resa.filter((r) => r.statut === "en_attente").length;
+  const nbReservationsTotal = resa.length;
+  const caTotal = resa
+    .filter((r) => r.statut === "terminee")
+    .reduce((s, r) => s + (r.prix_total ?? 0), 0);
 
-  const caTotal = terminees?.reduce((s, r) => s + (r.prix_total ?? 0), 0) ?? 0;
+  // Tendance CA : uniquement si le mois précédent a réellement des
+  // données (jamais de pourcentage basé sur une période vide).
+  const caMoisActuel = caDuMois(resa, 0);
+  const caMoisPrecedent = caDuMois(resa, -1);
+  const tendanceCa =
+    caMoisPrecedent > 0
+      ? Math.round(((caMoisActuel - caMoisPrecedent) / caMoisPrecedent) * 100)
+      : null;
 
   const dansTrenteJours = new Date();
   dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
@@ -90,7 +118,8 @@ export default async function DashboardProprietairePage() {
     .order("date_debut", { ascending: true })
     .limit(5);
 
-  const aucuneActivite = (nbVehicules ?? 0) === 0 && (reservationsRecentes?.length ?? 0) === 0;
+  const aucuneActivite =
+    (nbVehicules ?? 0) === 0 && nbReservationsTotal === 0;
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
@@ -122,6 +151,13 @@ export default async function DashboardProprietairePage() {
         </Link>
       </div>
 
+      {/* Checklist d'onboarding (disparait quand tout est fait ou masquée) */}
+      <ChecklistOnboarding
+        compteVerifie={verifie}
+        premierVehicule={(nbVehicules ?? 0) > 0}
+        premiereLocation={nbReservationsTotal > 0}
+      />
+
       {/* Cartes statistiques */}
       <div className="grid gap-6 sm:grid-cols-3">
         <StatCard
@@ -129,6 +165,14 @@ export default async function DashboardProprietairePage() {
           label="Revenus (MAD)"
           value={caTotal.toLocaleString("fr-FR")}
           variant="blue"
+          trend={
+            tendanceCa === null
+              ? undefined
+              : {
+                  direction: tendanceCa >= 0 ? "up" : "down",
+                  label: `${tendanceCa >= 0 ? "+" : ""}${tendanceCa}% vs mois dernier`,
+                }
+          }
         />
         <StatCard
           icon={Clock}
@@ -163,7 +207,7 @@ export default async function DashboardProprietairePage() {
                     {/* @ts-expect-error - relation typing simplifié */}
                     {d.vehicules?.marque} {d.vehicules?.modele}
                   </Link>{" "}
-                  — {LABELS_DOCUMENT[d.type]} {expire ? "expiré" : "expire"} le {d.date_expiration}
+                  — {LABELS_DOCUMENT[d.type]} {expire ? "expiré" : "expire"} le {formaterDate(d.date_expiration)}
                 </li>
               );
             })}
@@ -270,7 +314,7 @@ export default async function DashboardProprietairePage() {
                       </p>
                     </div>
                     <p className="shrink-0 text-xs text-dash-text-secondary">
-                      {r.date_debut} → {r.date_fin}
+                      {formaterPeriode(r.date_debut, r.date_fin)}
                     </p>
                   </li>
                 ))}
