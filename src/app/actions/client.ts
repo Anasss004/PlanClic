@@ -118,6 +118,11 @@ export async function creerReservation(formData: FormData) {
     date_debut: dateDebut,
     date_fin: dateFin,
     prix_total: prixTotal,
+    // Préférences facultatives du client — le propriétaire les ajuste
+    // après acceptation (heure/lieu de retour notamment).
+    heure_debut: (formData.get("heure_debut") as string) || null,
+    heure_fin: (formData.get("heure_fin") as string) || null,
+    lieu_debut: ((formData.get("lieu_debut") as string) || "").trim() || null,
   });
 
   if (error) {

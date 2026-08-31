@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarRange, SlidersHorizontal, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
+import { formaterPeriode, formaterHeure } from "@/lib/dates";
 import EmptyState from "@/components/ui/EmptyState";
 
 const CATEGORIES = [
@@ -65,7 +66,7 @@ export default async function CalendrierPage({
   const { data: reservations } = idsVehicules.length
     ? await supabase
         .from("reservations")
-        .select("id, vehicule_id, date_debut, date_fin, statut, source, nom_client_manuel, profiles(prenom, nom)")
+        .select("id, vehicule_id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, statut, source, nom_client_manuel, profiles(prenom, nom)")
         .in("vehicule_id", idsVehicules)
         .in("statut", ["confirmee", "en_attente"])
         .lte("date_debut", dateFinFenetre)
@@ -239,16 +240,29 @@ export default async function CalendrierPage({
                       const profil = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
                       const nom = r.source === "manuel" ? r.nom_client_manuel : `${profil?.prenom ?? ""} ${profil?.nom ?? ""}`;
                       const estConfirmee = r.statut === "confirmee";
+                      const detail = [
+                        `${nom} · ${formaterPeriode(r.date_debut, r.date_fin)}`,
+                        r.heure_debut || r.heure_fin
+                          ? `Départ ${formaterHeure(r.heure_debut) || "?"} → retour ${formaterHeure(r.heure_fin) || "?"}`
+                          : null,
+                        r.lieu_debut ? `Lieu : ${r.lieu_debut}` : null,
+                        r.lieu_fin && r.lieu_fin !== r.lieu_debut ? `Retour : ${r.lieu_fin}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join("\n");
                       return (
                         <div
                           key={r.id}
                           style={pos}
-                          className={`mx-1 flex items-center truncate rounded-lg px-3 py-2.5 text-xs font-semibold ${
+                          className={`mx-1 flex items-center gap-1.5 truncate rounded-lg px-3 py-2.5 text-xs font-semibold ${
                             estConfirmee ? "bg-dash-sidebar text-white" : "bg-dash-accent text-dash-dark"
                           }`}
-                          title={nom}
+                          title={detail}
                         >
-                          {nom}
+                          {r.heure_debut && (
+                            <span className="shrink-0 opacity-80">{formaterHeure(r.heure_debut)}</span>
+                          )}
+                          <span className="truncate">{nom}</span>
                         </div>
                       );
                     })}

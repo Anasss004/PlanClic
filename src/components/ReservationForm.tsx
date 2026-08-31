@@ -68,6 +68,40 @@ export default function FormulaireReservation({
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500">
+            Heure de départ <span className="text-gray-400">(optionnel)</span>
+          </label>
+          <input
+            type="time"
+            name="heure_debut"
+            className="w-full rounded-full border border-[#b9b9b9] px-4 py-2.5 text-sm text-brand-dark outline-none focus:border-brand-dark"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500">
+            Heure de retour <span className="text-gray-400">(optionnel)</span>
+          </label>
+          <input
+            type="time"
+            name="heure_fin"
+            className="w-full rounded-full border border-[#b9b9b9] px-4 py-2.5 text-sm text-brand-dark outline-none focus:border-brand-dark"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-gray-500">
+          Lieu de prise en charge souhaité <span className="text-gray-400">(optionnel)</span>
+        </label>
+        <input
+          name="lieu_debut"
+          placeholder="ex : Aéroport Marrakech-Ménara, centre-ville…"
+          className="w-full rounded-full border border-[#b9b9b9] px-4 py-2.5 text-sm text-brand-dark outline-none focus:border-brand-dark"
+        />
+      </div>
+
       {/* Récapitulatif du prix, calculé en direct */}
       {datesValides ? (
         <div className="rounded-xl bg-brand-light/20 px-4 py-3">

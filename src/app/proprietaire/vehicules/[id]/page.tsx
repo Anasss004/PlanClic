@@ -13,6 +13,7 @@ import {
   Circle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { formaterDate, formaterPeriode } from "@/lib/dates";
 import Badge from "@/components/ui/Badge";
 import DatePicker from "@/components/ui/DatePicker";
 import CalendrierVehicule from "@/components/proprietaire/CalendrierVehicule";
@@ -229,7 +230,7 @@ export default async function VehiculeDetailPage({
                 {blocagesManuels.map((b) => (
                   <div key={b.id} className="flex items-center justify-between rounded-lg bg-[#fff8e8] px-4 py-2.5 text-sm">
                     <span className="text-[#755400]">
-                      {b.nom_client_manuel} · {b.date_debut} → {b.date_fin}
+                      {b.nom_client_manuel} · {formaterPeriode(b.date_debut, b.date_fin)}
                     </span>
                     <AnnulerBlocageButton reservationId={b.id} vehiculeId={id} />
                   </div>
@@ -268,7 +269,7 @@ export default async function VehiculeDetailPage({
                 {maintenances.map((m) => (
                   <div key={m.id} className="relative mb-6 last:mb-0">
                     <span className="absolute -left-[29px] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-dash-accent" />
-                    <p className="text-xs font-medium text-dash-text-secondary">{m.date_intervention}</p>
+                    <p className="text-xs font-medium text-dash-text-secondary">{formaterDate(m.date_intervention)}</p>
                     <div className="mt-1 rounded-lg border border-dash-border bg-[#faf9fa] p-4">
                       <p className="font-semibold text-dash-text">{LABELS_MAINTENANCE[m.type]}</p>
                       {m.description && <p className="mt-1 text-sm text-dash-text-secondary">{m.description}</p>}
@@ -341,7 +342,7 @@ export default async function VehiculeDetailPage({
                   return (
                     <div key={d.id} className="flex items-center justify-between border-t border-dash-border pt-2 text-sm first:border-0 first:pt-0">
                       <span className="text-dash-text">
-                        {LABELS_DOCUMENT[d.type]} <span className="text-xs text-dash-text-secondary">· exp. {d.date_expiration}</span>
+                        {LABELS_DOCUMENT[d.type]} <span className="text-xs text-dash-text-secondary">· exp. {formaterDate(d.date_expiration)}</span>
                       </span>
                       <Badge variant={expire ? "danger" : bientotExpire ? "warning" : "success"}>
                         {expire ? "Expiré" : bientotExpire ? "Bientôt" : "OK"}
