@@ -52,48 +52,42 @@ export default async function DashboardProprietairePage() {
   } = await supabase.auth.getUser();
   const { id: pid } = await resoudreProprietaireId(user!.id);
 
-  const { data: proprietaire } = await supabase
-    .from("proprietaires")
-    .select("statut_verification")
-    .eq("id", pid)
-    .single();
-
-  const verifie = proprietaire?.statut_verification === "verifie";
-
-  const { count: nbVehicules } = await supabase
-    .from("vehicules")
-    .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", pid);
-
-  // Toutes les réservations de l'agence (pour les compteurs + les
-  // vraies tendances mois / mois précédent).
-  const { data: toutesReservations } = await supabase
-    .from("reservations")
-    .select("statut, prix_total, created_at")
-    .eq("proprietaire_id", pid);
-
-  const resa = toutesReservations ?? [];
-  const nbEnAttente = resa.filter((r) => r.statut === "en_attente").length;
-  const nbReservationsTotal = resa.length;
-  const caTotal = resa
-    .filter((r) => r.statut === "terminee")
-    .reduce((s, r) => s + (r.prix_total ?? 0), 0);
-
-  // Tendance CA : uniquement si le mois précédent a réellement des
-  // données (jamais de pourcentage basé sur une période vide).
-  const caMoisActuel = caDuMois(resa, 0);
-  const caMoisPrecedent = caDuMois(resa, -1);
-  const tendanceCa =
-    caMoisPrecedent > 0
-      ? Math.round(((caMoisActuel - caMoisPrecedent) / caMoisPrecedent) * 100)
-      : null;
-
   const aujourdhui = new Date().toISOString().slice(0, 10);
 
-  // Requête pour les opérations du jour (départs, retours, retards)
-  const { data: reservationsOperations } = await supabase
-    .from("reservations")
-    .select(`
+  const dansTrenteJours = new Date();
+  dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
+
+  // Ces sept requêtes ne dépendent que de `pid` : aucune n'a besoin du
+  // résultat d'une autre. Elles étaient enchaînées une par une (sept
+  // allers-retours en série) et partent désormais ensemble.
+  const [
+    { data: proprietaire },
+    { count: nbVehicules },
+    // Toutes les réservations de l'agence (pour les compteurs + les
+    // vraies tendances mois / mois précédent).
+    { data: toutesReservations },
+    // Opérations du jour (départs, retours, retards).
+    { data: reservationsOperations },
+    { data: documentsAlerte },
+    { data: reservationsRecentes },
+    { data: reservationsAVenir },
+  ] = await Promise.all([
+    supabase
+      .from("proprietaires")
+      .select("statut_verification")
+      .eq("id", pid)
+      .single(),
+    supabase
+      .from("vehicules")
+      .select("*", { count: "exact", head: true })
+      .eq("proprietaire_id", pid),
+    supabase
+      .from("reservations")
+      .select("statut, prix_total, created_at")
+      .eq("proprietaire_id", pid),
+    supabase
+      .from("reservations")
+      .select(`
       id,
       vehicule_id,
       date_debut,
@@ -111,8 +105,47 @@ export default async function DashboardProprietairePage() {
       vehicules(id, marque, modele, immatriculation, kilometrage_actuel),
       profiles(prenom, nom, telephone)
     `)
-    .eq("proprietaire_id", pid)
-    .eq("statut", "confirmee");
+      .eq("proprietaire_id", pid)
+      .eq("statut", "confirmee"),
+    supabase
+      .from("documents_vehicule")
+      .select("id, type, date_expiration, vehicule_id, vehicules(marque, modele)")
+      .eq("proprietaire_id", pid)
+      .lte("date_expiration", dansTrenteJours.toISOString().slice(0, 10))
+      .order("date_expiration", { ascending: true }),
+    supabase
+      .from("reservations")
+      .select("id, date_debut, date_fin, statut, created_at, vehicules(marque, modele), profiles(prenom, nom)")
+      .eq("proprietaire_id", pid)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("reservations")
+      .select("id, date_debut, date_fin, vehicules(marque, modele), profiles(prenom, nom)")
+      .eq("proprietaire_id", pid)
+      .eq("statut", "confirmee")
+      .gte("date_debut", aujourdhui)
+      .order("date_debut", { ascending: true })
+      .limit(5),
+  ]);
+
+  const verifie = proprietaire?.statut_verification === "verifie";
+
+  const resa = toutesReservations ?? [];
+  const nbEnAttente = resa.filter((r) => r.statut === "en_attente").length;
+  const nbReservationsTotal = resa.length;
+  const caTotal = resa
+    .filter((r) => r.statut === "terminee")
+    .reduce((s, r) => s + (r.prix_total ?? 0), 0);
+
+  // Tendance CA : uniquement si le mois précédent a réellement des
+  // données (jamais de pourcentage basé sur une période vide).
+  const caMoisActuel = caDuMois(resa, 0);
+  const caMoisPrecedent = caDuMois(resa, -1);
+  const tendanceCa =
+    caMoisPrecedent > 0
+      ? Math.round(((caMoisActuel - caMoisPrecedent) / caMoisPrecedent) * 100)
+      : null;
 
   const ops = reservationsOperations ?? [];
 
@@ -163,37 +196,11 @@ export default async function DashboardProprietairePage() {
     (r) => r.date_debut <= aujourdhui && r.date_fin >= aujourdhui
   ).length;
 
-  const dansTrenteJours = new Date();
-  dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
-
-  const { data: documentsAlerte } = await supabase
-    .from("documents_vehicule")
-    .select("id, type, date_expiration, vehicule_id, vehicules(marque, modele)")
-    .eq("proprietaire_id", pid)
-    .lte("date_expiration", dansTrenteJours.toISOString().slice(0, 10))
-    .order("date_expiration", { ascending: true });
-
   const LABELS_DOCUMENT: Record<string, string> = {
     assurance: "Assurance",
     controle_technique: "Contrôle technique",
     vignette: "Vignette",
   };
-
-  const { data: reservationsRecentes } = await supabase
-    .from("reservations")
-    .select("id, date_debut, date_fin, statut, created_at, vehicules(marque, modele), profiles(prenom, nom)")
-    .eq("proprietaire_id", pid)
-    .order("created_at", { ascending: false })
-    .limit(5);
-
-  const { data: reservationsAVenir } = await supabase
-    .from("reservations")
-    .select("id, date_debut, date_fin, vehicules(marque, modele), profiles(prenom, nom)")
-    .eq("proprietaire_id", pid)
-    .eq("statut", "confirmee")
-    .gte("date_debut", aujourdhui)
-    .order("date_debut", { ascending: true })
-    .limit(5);
 
   const aucuneActivite =
     (nbVehicules ?? 0) === 0 && nbReservationsTotal === 0;

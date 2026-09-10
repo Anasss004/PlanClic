@@ -61,50 +61,73 @@ export default async function FicheAgencePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: agence } = await supabase
-    .from("proprietaires")
-    .select(
-      "id, nom_entreprise, specialite, ville, adresse, registre_commerce, statut_verification, verifie_le, created_at, deleted_at"
-    )
-    .eq("id", id)
-    .single();
+  // Les huit requêtes de la fiche ne dépendent que de `id` : elles étaient
+  // enchaînées une par une et partent maintenant ensemble. Si l'agence est
+  // introuvable, les sept autres auront tourné pour rien — travail perdu dans
+  // ce seul cas de bord, jamais un affichage différent.
+  const [
+    { data: agence },
+    { data: profil },
+    { data: historiquePlans },
+    { data: plansDisponibles },
+    { data: vehicules },
+    { data: reservations },
+    { data: documents },
+    { data: journal },
+  ] = await Promise.all([
+    supabase
+      .from("proprietaires")
+      .select(
+        "id, nom_entreprise, specialite, ville, adresse, registre_commerce, statut_verification, verifie_le, created_at, deleted_at"
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("profiles")
+      .select("prenom, nom, email, telephone, created_at")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("abonnements")
+      .select("id, plan_id, statut, date_debut, date_fin, created_at, plans(nom, prix)")
+      .eq("proprietaire_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("plans")
+      .select("id, nom")
+      .eq("actif", true)
+      .order("prix", { ascending: true }),
+    supabase
+      .from("vehicules")
+      .select("id, marque, modele, immatriculation, ville, prix_jour, statut, deleted_at")
+      .eq("proprietaire_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("reservations")
+      .select("id, statut, source, date_debut, date_fin, prix_total, created_at, vehicules(marque, modele)")
+      .eq("proprietaire_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("documents")
+      .select("id, type_document, storage_path, statut, created_at")
+      .eq("owner_id", id)
+      .in("type_document", ["registre_commerce", "id_gerant"])
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("audit_logs")
+      .select("id, action, resource_type, actor_role, metadata, created_at")
+      .or(`resource_id.eq.${id},actor_id.eq.${id}`)
+      .order("created_at", { ascending: false })
+      .limit(25),
+  ]);
 
   if (!agence) notFound();
-
-  const { data: profil } = await supabase
-    .from("profiles")
-    .select("prenom, nom, email, telephone, created_at")
-    .eq("id", id)
-    .single();
-
-  const { data: historiquePlans } = await supabase
-    .from("abonnements")
-    .select("id, plan_id, statut, date_debut, date_fin, created_at, plans(nom, prix)")
-    .eq("proprietaire_id", id)
-    .order("created_at", { ascending: false });
 
   const abonnementActif = (historiquePlans ?? []).find((a) => a.statut === "actif");
   const planActif = Array.isArray(abonnementActif?.plans)
     ? abonnementActif?.plans[0]
     : abonnementActif?.plans;
-
-  const { data: plansDisponibles } = await supabase
-    .from("plans")
-    .select("id, nom")
-    .eq("actif", true)
-    .order("prix", { ascending: true });
-
-  const { data: vehicules } = await supabase
-    .from("vehicules")
-    .select("id, marque, modele, immatriculation, ville, prix_jour, statut, deleted_at")
-    .eq("proprietaire_id", id)
-    .order("created_at", { ascending: false });
-
-  const { data: reservations } = await supabase
-    .from("reservations")
-    .select("id, statut, source, date_debut, date_fin, prix_total, created_at, vehicules(marque, modele)")
-    .eq("proprietaire_id", id)
-    .order("created_at", { ascending: false });
 
   const resaList = reservations ?? [];
   const demandes = resaList.filter((r) => r.source !== "manuel");
@@ -124,21 +147,6 @@ export default async function FicheAgencePage({
   const caGenere = resaList
     .filter((r) => r.statut === "terminee")
     .reduce((s, r) => s + (r.prix_total ?? 0), 0);
-
-  const { data: documents } = await supabase
-    .from("documents")
-    .select("id, type_document, storage_path, statut, created_at")
-    .eq("owner_id", id)
-    .in("type_document", ["registre_commerce", "id_gerant"])
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
-
-  const { data: journal } = await supabase
-    .from("audit_logs")
-    .select("id, action, resource_type, actor_role, metadata, created_at")
-    .or(`resource_id.eq.${id},actor_id.eq.${id}`)
-    .order("created_at", { ascending: false })
-    .limit(25);
 
   const actif = !agence.deleted_at;
 

@@ -49,15 +49,14 @@ export default async function ProprietaireLayout({
 
   if (!user) redirect("/connexion");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, prenom, nom")
-    .eq("id", user.id)
-    .single();
+  // Le profil et le contexte d'impersonation ne dépendent pas l'un de l'autre :
+  // getImpersonation() ne lit que le cookie et sa propre session.
+  const [{ data: profile }, impersonation] = await Promise.all([
+    supabase.from("profiles").select("role, prenom, nom").eq("id", user.id).single(),
+    getImpersonation(),
+  ]);
 
   if (!profile) redirect("/connexion");
-
-  const impersonation = await getImpersonation();
 
   if (!impersonation && profile.role !== "proprietaire") {
     redirect("/dashboard");
@@ -65,37 +64,47 @@ export default async function ProprietaireLayout({
 
   const proprietaireId = impersonation ? impersonation.proprietaireId : user.id;
 
-  const { data: proprietaire } = await supabase
-    .from("proprietaires")
-    .select("statut_verification, nom_entreprise")
-    .eq("id", proprietaireId)
-    .single();
-
-  if (!proprietaire) {
-    redirect(impersonation ? "/admin/dashboard" : "/inscription/infos-professionnelles");
-  }
-
-  const { count: nbEnAttente } = await supabase
-    .from("reservations")
-    .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", proprietaireId)
-    .eq("statut", "en_attente");
-
-  const { count: nbNotifsNonLues } = await supabase
-    .from("notifications")
-    .select("*", { count: "exact", head: true })
-    .eq("destinataire_id", proprietaireId)
-    .is("lu_le", null);
-
   // Documents véhicule qui expirent sous 30 j — comptés dans la pastille
   // "Notifications" (les demandes en attente ont déjà leur propre pastille).
   const dans30j = new Date();
   dans30j.setDate(dans30j.getDate() + 30);
-  const { count: nbDocsExpirant } = await supabase
-    .from("documents_vehicule")
-    .select("*", { count: "exact", head: true })
-    .eq("proprietaire_id", proprietaireId)
-    .lte("date_expiration", dans30j.toISOString().slice(0, 10));
+
+  // Les quatre requêtes suivantes ne dépendent que de proprietaireId : elles
+  // partent ensemble au lieu de s'enchaîner. Les compteurs sont désormais
+  // lancés même dans le cas où l'agence est introuvable (redirection juste
+  // après) : c'est du travail perdu dans ce cas de bord, jamais un changement
+  // de ce qui est affiché.
+  const [
+    { data: proprietaire },
+    { count: nbEnAttente },
+    { count: nbNotifsNonLues },
+    { count: nbDocsExpirant },
+  ] = await Promise.all([
+    supabase
+      .from("proprietaires")
+      .select("statut_verification, nom_entreprise")
+      .eq("id", proprietaireId)
+      .single(),
+    supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("proprietaire_id", proprietaireId)
+      .eq("statut", "en_attente"),
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("destinataire_id", proprietaireId)
+      .is("lu_le", null),
+    supabase
+      .from("documents_vehicule")
+      .select("*", { count: "exact", head: true })
+      .eq("proprietaire_id", proprietaireId)
+      .lte("date_expiration", dans30j.toISOString().slice(0, 10)),
+  ]);
+
+  if (!proprietaire) {
+    redirect(impersonation ? "/admin/dashboard" : "/inscription/infos-professionnelles");
+  }
 
   const badgeNotifs = (nbNotifsNonLues ?? 0) + (nbDocsExpirant ?? 0);
 

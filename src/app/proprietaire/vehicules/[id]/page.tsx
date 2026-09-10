@@ -50,44 +50,60 @@ export default async function VehiculeDetailPage({
   const sp = await searchParams;
   const supabase = await createClient();
 
-  const { data: vehicule } = await supabase
-    .from("vehicules")
-    .select("*")
-    .eq("id", id)
-    .single();
+  // Taux d'occupation 30 derniers jours (pour la barre de progression)
+  const il30jours = new Date();
+  il30jours.setDate(il30jours.getDate() - 30);
+
+  // Les six requêtes ne dépendent que de `id` : aucune n'attend le résultat
+  // d'une autre. Elles étaient enchaînées, elles partent maintenant ensemble.
+  // Si le véhicule est introuvable, les cinq autres auront tourné pour rien —
+  // travail perdu dans ce seul cas de bord, jamais un affichage différent.
+  const [
+    { data: vehicule },
+    { data: reservationsTerminees },
+    { data: maintenances },
+    { data: documents },
+    { data: reservationsActives },
+    { data: reservationsRecentes },
+  ] = await Promise.all([
+    supabase.from("vehicules").select("*").eq("id", id).single(),
+    supabase
+      .from("reservations")
+      .select("prix_total")
+      .eq("vehicule_id", id)
+      .eq("statut", "terminee"),
+    supabase
+      .from("maintenance")
+      .select("*")
+      .eq("vehicule_id", id)
+      .is("deleted_at", null)
+      .order("date_intervention", { ascending: false }),
+    supabase
+      .from("documents_vehicule")
+      .select("*")
+      .eq("vehicule_id", id)
+      .order("date_expiration", { ascending: true }),
+    supabase
+      .from("reservations")
+      .select("id, date_debut, date_fin, statut, source, nom_client_manuel, profiles(prenom, nom)")
+      .eq("vehicule_id", id)
+      .in("statut", ["confirmee"])
+      .order("date_debut", { ascending: true }),
+    supabase
+      .from("reservations")
+      .select("date_debut, date_fin")
+      .eq("vehicule_id", id)
+      .in("statut", ["confirmee", "terminee"])
+      .gte("date_fin", il30jours.toISOString().slice(0, 10)),
+  ]);
 
   if (!vehicule) {
     return <p className="text-sm text-dash-text-secondary">Véhicule introuvable.</p>;
   }
 
-  const { data: reservationsTerminees } = await supabase
-    .from("reservations")
-    .select("prix_total")
-    .eq("vehicule_id", id)
-    .eq("statut", "terminee");
   const revenuBrut = reservationsTerminees?.reduce((s, r) => s + (r.prix_total ?? 0), 0) ?? 0;
-
-  const { data: maintenances } = await supabase
-    .from("maintenance")
-    .select("*")
-    .eq("vehicule_id", id)
-    .is("deleted_at", null)
-    .order("date_intervention", { ascending: false });
   const coutMaintenance = maintenances?.reduce((s, m) => s + (m.cout ?? 0), 0) ?? 0;
   const profitNet = revenuBrut - coutMaintenance;
-
-  const { data: documents } = await supabase
-    .from("documents_vehicule")
-    .select("*")
-    .eq("vehicule_id", id)
-    .order("date_expiration", { ascending: true });
-
-  const { data: reservationsActives } = await supabase
-    .from("reservations")
-    .select("id, date_debut, date_fin, statut, source, nom_client_manuel, profiles(prenom, nom)")
-    .eq("vehicule_id", id)
-    .in("statut", ["confirmee"])
-    .order("date_debut", { ascending: true });
 
   const periodesCalendrier = (reservationsActives ?? []).map((r) => ({
     debut: r.date_debut,
@@ -96,15 +112,6 @@ export default async function VehiculeDetailPage({
   }));
   const blocagesManuels = (reservationsActives ?? []).filter((r) => r.source === "manuel");
 
-  // Taux d'occupation 30 derniers jours (pour la barre de progression)
-  const il30jours = new Date();
-  il30jours.setDate(il30jours.getDate() - 30);
-  const { data: reservationsRecentes } = await supabase
-    .from("reservations")
-    .select("date_debut, date_fin")
-    .eq("vehicule_id", id)
-    .in("statut", ["confirmee", "terminee"])
-    .gte("date_fin", il30jours.toISOString().slice(0, 10));
   let joursOccupes = 0;
   (reservationsRecentes ?? []).forEach((r) => {
     const debut = new Date(Math.max(new Date(r.date_debut).getTime(), il30jours.getTime()));
