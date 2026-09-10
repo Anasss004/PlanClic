@@ -16,7 +16,13 @@ import {
   FileText,
   RotateCcw,
 } from "lucide-react";
-import ModalRetourVehicule from "@/components/proprietaire/ModalRetourVehicule";
+import dynamic from "next/dynamic";
+
+// Modale chargée à la demande (rendue seulement une fois ouverte).
+const ModalRetourVehicule = dynamic(
+  () => import("@/components/proprietaire/ModalRetourVehicule"),
+  { ssr: false }
+);
 import { construireLienWhatsApp } from "@/lib/whatsapp";
 import { formaterHeure } from "@/lib/dates";
 

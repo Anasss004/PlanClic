@@ -23,7 +23,7 @@ import { getImpersonation } from "@/lib/impersonation";
 import NavLink from "@/components/proprietaire/NavLink";
 import MobileDrawer from "@/components/proprietaire/MobileDrawer";
 import BanniereImpersonation from "@/components/proprietaire/BanniereImpersonation";
-import CommandPalette from "@/components/proprietaire/CommandPalette";
+import CommandPaletteLazy from "@/components/proprietaire/CommandPaletteLazy";
 import HeaderProprietaire from "@/components/proprietaire/HeaderProprietaire";
 
 const NAV = [
@@ -213,7 +213,7 @@ export default async function ProprietaireLayout({
   return (
     <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)] max-lg:flex-col">
       {/* Palette de commande Cmd+K universelle */}
-      <CommandPalette />
+      <CommandPaletteLazy />
 
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col justify-between bg-dash-sidebar px-8 py-8 lg:flex">

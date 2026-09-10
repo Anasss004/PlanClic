@@ -19,8 +19,17 @@ import {
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import ActionsReservation from "@/components/proprietaire/ActionsReservation";
-import ModalPaiement from "@/components/proprietaire/ModalPaiement";
-import ModalRetourVehicule from "@/components/proprietaire/ModalRetourVehicule";
+import dynamic from "next/dynamic";
+
+// Modales chargées à la demande (rendues seulement une fois ouvertes).
+const ModalPaiement = dynamic(
+  () => import("@/components/proprietaire/ModalPaiement"),
+  { ssr: false }
+);
+const ModalRetourVehicule = dynamic(
+  () => import("@/components/proprietaire/ModalRetourVehicule"),
+  { ssr: false }
+);
 import { formaterPeriode, formaterHeure, nombreDeJours } from "@/lib/dates";
 import { construireLienWhatsApp } from "@/lib/whatsapp";
 import {

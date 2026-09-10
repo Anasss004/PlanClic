@@ -5,8 +5,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { Car, Wrench, TrendingUp, Search, FilePlus2, Check, KeyRound, RotateCcw } from "lucide-react";
 import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
-import ModalStatutVehicule from "@/components/proprietaire/ModalStatutVehicule";
-import ModalRetourVehicule from "@/components/proprietaire/ModalRetourVehicule";
+import dynamic from "next/dynamic";
+
+// Modales chargées à la demande : elles ne sont rendues qu'une fois ouvertes,
+// leur chunk n'est donc téléchargé qu'au premier clic.
+const ModalStatutVehicule = dynamic(
+  () => import("@/components/proprietaire/ModalStatutVehicule"),
+  { ssr: false }
+);
+const ModalRetourVehicule = dynamic(
+  () => import("@/components/proprietaire/ModalRetourVehicule"),
+  { ssr: false }
+);
 import { formaterDate } from "@/lib/dates";
 
 type Vehicule = {
