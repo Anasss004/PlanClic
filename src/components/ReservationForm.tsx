@@ -35,11 +35,11 @@ export default function FormulaireReservation({
   return (
     <form
       action={creerReservation}
-      className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+      className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] max-sm:p-4"
     >
       <input type="hidden" name="vehicule_id" value={vehiculeId} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-500">
             Date de départ
@@ -125,7 +125,7 @@ export default function FormulaireReservation({
       <button
         type="submit"
         disabled={!datesValides}
-        className="w-full rounded-full bg-brand-accent py-2.5 text-sm font-semibold text-brand-dark shadow transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-full bg-brand-accent py-2.5 max-sm:py-3 text-sm font-semibold text-brand-dark shadow transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         Envoyer une demande de réservation
       </button>

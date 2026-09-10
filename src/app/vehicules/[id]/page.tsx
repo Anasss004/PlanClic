@@ -49,7 +49,7 @@ export default async function VehiculeDetailPage({
     return (
       <>
         <Header />
-        <main className="mx-auto max-w-3xl flex-1 px-6 py-16 text-center">
+        <main className="mx-auto max-w-3xl flex-1 px-6 py-16 text-center max-sm:px-4">
           <p className="text-gray-500">Ce véhicule n&apos;existe pas ou n&apos;est plus disponible.</p>
         </main>
         <Footer />
@@ -70,7 +70,7 @@ export default async function VehiculeDetailPage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8 max-sm:px-4">
         {/* Fil d'Ariane */}
         <p className="mb-4 flex items-center gap-1.5 text-xs text-brand-dark/70">
           <MapPin size={13} strokeWidth={1.75} />

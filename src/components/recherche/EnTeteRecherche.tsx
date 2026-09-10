@@ -82,7 +82,7 @@ export default function EnTeteRecherche({
   return (
     <header className="sticky top-0 z-50 bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.3),0px_1px_3px_1px_rgba(0,0,0,0.15)]">
       {/* Ligne 1 — résumé de recherche */}
-      <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-6 py-3">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-6 py-3 max-md:flex-wrap max-md:gap-y-2 max-sm:px-4">
         <Link
           href="/"
           className="shrink-0 font-[family-name:var(--font-bagel)] text-2xl text-brand-dark"
@@ -91,7 +91,7 @@ export default function EnTeteRecherche({
         </Link>
 
         {modification ? (
-          <div className="flex flex-1 flex-wrap items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5">
+          <div className="flex flex-1 flex-wrap items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 max-md:order-last max-md:basis-full max-md:rounded-2xl">
             <select
               value={villeEdit}
               onChange={(e) => setVilleEdit(e.target.value)}
@@ -124,7 +124,7 @@ export default function EnTeteRecherche({
             </button>
           </div>
         ) : (
-          <div className="flex flex-1 items-center gap-3 overflow-x-auto rounded-full border border-gray-200 px-4 py-2 text-sm text-brand-dark">
+          <div className="flex flex-1 items-center gap-3 overflow-x-auto rounded-full border border-gray-200 px-4 py-2 text-sm text-brand-dark max-md:order-last max-md:basis-full">
             <span className="flex items-center gap-1.5 whitespace-nowrap">
               <Car size={15} strokeWidth={1.75} />
               {ville || "Toutes les villes"}, Maroc
@@ -156,7 +156,7 @@ export default function EnTeteRecherche({
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4 max-md:ml-auto">
           <MapIcon size={18} strokeWidth={1.75} className="hidden text-brand-dark sm:block" />
           {profile ? (
             <ProfileMenu prenom={profile.prenom} nom={profile.nom} role={profile.role} />
@@ -172,7 +172,7 @@ export default function EnTeteRecherche({
       </div>
 
       {/* Ligne 2 — type de véhicule + filtres */}
-      <div className="mx-auto flex max-w-[1280px] items-center gap-3 overflow-x-auto px-6 pb-3">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-3 overflow-x-auto px-6 pb-3 max-sm:px-4">
         <div className="flex shrink-0 gap-2">
           {TYPES.map((t) => {
             const Icon = t.icon;

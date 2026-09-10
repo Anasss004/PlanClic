@@ -51,7 +51,7 @@ export default function VehicleResultCard({
       className="group flex overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Photo */}
-      <div className="relative w-[160px] shrink-0 overflow-hidden bg-brand-light/25 sm:w-[200px]">
+      <div className="relative w-[160px] shrink-0 overflow-hidden bg-brand-light/25 sm:w-[200px] max-sm:w-[120px]">
         {vehicule.photos?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -67,7 +67,7 @@ export default function VehicleResultCard({
       </div>
 
       {/* Contenu */}
-      <div className="flex flex-1 flex-col justify-between gap-3 border-l border-gray-100 p-4 sm:flex-row sm:gap-4">
+      <div className="flex flex-1 flex-col justify-between gap-3 border-l border-gray-100 p-4 sm:flex-row sm:gap-4 max-sm:p-3">
         {/* Colonne infos véhicule */}
         <div className="min-w-0">
           <p className="text-base font-bold text-brand-dark">
@@ -94,7 +94,7 @@ export default function VehicleResultCard({
           </div>
 
           {conditions.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-brand-dark">
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-brand-dark max-sm:grid-cols-1">
               {conditions.map((c) => (
                 <span key={c} className="flex items-center gap-1.5">
                   {c === vehicule.carburant ? (

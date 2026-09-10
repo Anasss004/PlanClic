@@ -132,7 +132,7 @@ export default async function RecherchePage({
         prixMax={prix_max}
       />
 
-      <main className="mx-auto w-full max-w-[1280px] flex-1 bg-[#f4f7f8] px-6 py-6">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 bg-[#f4f7f8] px-6 py-6 max-sm:px-4">
         <p className="mb-2 text-xs text-brand-dark/70">
           Maroc {ville ? `> ${ville}` : ""} {type ? `> ${LABELS_TYPE[type] ?? type}` : ""}
         </p>
