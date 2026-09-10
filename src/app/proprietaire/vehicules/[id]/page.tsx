@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Wrench,
@@ -167,8 +168,14 @@ export default async function VehiculeDetailPage({
         <div>
           <div className="relative h-[320px] overflow-hidden rounded-xl bg-[#eeeeef]">
             {vehicule.photos?.[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={vehicule.photos[0]} alt="" className="h-full w-full object-cover" />
+              <Image
+                src={vehicule.photos[0]}
+                alt=""
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 700px"
+                className="object-cover"
+              />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <Car size={48} strokeWidth={1.25} className="text-dash-dark/30" />

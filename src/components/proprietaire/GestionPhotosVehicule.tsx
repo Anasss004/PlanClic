@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Star, Trash2 } from "lucide-react";
 import {
   supprimerPhotoVehicule,
@@ -66,8 +67,7 @@ export default function GestionPhotosVehicule({
             i === 0 ? "border-dash-accent" : "border-transparent"
           } bg-gray-100`}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="" className="h-full w-full object-cover" />
+          <Image src={url} alt="" fill sizes="128px" className="object-cover" />
 
           {i === 0 && (
             <span className="absolute left-1 top-1 flex items-center gap-1 rounded bg-dash-accent px-1.5 py-0.5 text-[10px] font-bold text-dash-text">

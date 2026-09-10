@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, useRef, useEffect } from "react";
+import Image from "next/image";
 import {
   Car,
   Calendar,
@@ -368,11 +369,12 @@ export default function ListeReservations({
                       {/* Image véhicule */}
                       <div className="relative h-[78px] w-[104px] shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100">
                         {v?.photos?.[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={v.photos[0]}
                             alt=""
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            fill
+                            sizes="104px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">

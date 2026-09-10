@@ -1,4 +1,5 @@
 import { Car, Bike, Truck, MapPin, Fuel, Gauge, Users, DoorOpen, ShieldCheck, Check } from "lucide-react";
+import Image from "next/image";
 import { lireVehiculePublic, lireAgencePublique } from "@/lib/catalogue";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -72,13 +73,15 @@ export default async function VehiculeDetailPage({
         <div className="grid gap-8 md:grid-cols-2">
           {/* Photo */}
           <Reveal>
-            <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-brand-light/25 md:h-full md:min-h-[420px]">
+            <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-brand-light/25 md:h-full md:min-h-[420px]">
               {vehicule.photos?.[0] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={vehicule.photos[0]}
                   alt={`${vehicule.marque} ${vehicule.modele}`}
-                  className="h-full w-full object-cover"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  className="object-cover"
                 />
               ) : (
                 <Icon size={56} strokeWidth={1.25} className="text-brand-dark/40" />

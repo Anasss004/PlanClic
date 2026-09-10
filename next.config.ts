@@ -11,6 +11,37 @@ function hoteSupabase(): string {
 }
 
 const nextConfig: NextConfig = {
+  // Autorise l'optimiseur d'images Next à traiter les photos de véhicules
+  // servies par Supabase Storage. Sans cette entrée, next/image répond
+  // 400 « "url" parameter is not allowed ». Les images optimisées sont
+  // ensuite servies depuis /_next/image, donc couvertes par le
+  // `img-src 'self'` de la CSP.
+  //
+  // Le motif est statique plutôt que dérivé de NEXT_PUBLIC_SUPABASE_URL
+  // comme la CSP, pour rester valable quel que soit le projet Supabase
+  // (production, préproduction, environnement local) sans dépendre de
+  // l'ordre de chargement des variables d'environnement.
+  //
+  // Le chemin reste restreint aux objets publics du bucket : l'optimiseur
+  // ne peut pas être détourné pour aller chercher une URL arbitraire.
+  //
+  // À savoir en développement : Next 16 refuse d'optimiser une image dont
+  // le nom d'hôte résout vers une IP jugée privée (protection SSRF). Sur un
+  // réseau IPv6 en NAT64, supabase.co résout vers des adresses 64:ff9b::/96
+  // qui encapsulent des IPv4 publiques mais sont classées comme privées :
+  // les photos ne s'affichent alors pas en local, alors qu'elles
+  // fonctionnent en production. Ne pas « corriger » cela avec
+  // images.dangerouslyAllowLocalIP, qui désactiverait la protection partout.
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
+
   experimental: {
     serverActions: {
       // Les documents (RC, pièce d'identité) et photos de véhicules

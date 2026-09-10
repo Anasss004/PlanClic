@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Car, Bike, Truck, MapPin, Gauge, Fuel, Check, Star } from "lucide-react";
 
 const ICONES_TYPE = { voiture: Car, moto: Bike, utilitaire: Truck } as const;
@@ -53,11 +54,12 @@ export default function VehicleResultCard({
       {/* Photo */}
       <div className="relative w-[160px] shrink-0 overflow-hidden bg-brand-light/25 sm:w-[200px] max-sm:w-[120px]">
         {vehicule.photos?.[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={vehicule.photos[0]}
             alt={`${vehicule.marque} ${vehicule.modele}`}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 120px, (max-width: 1024px) 160px, 200px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center">

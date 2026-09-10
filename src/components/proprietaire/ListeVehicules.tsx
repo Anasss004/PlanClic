@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Car, Wrench, TrendingUp, Search, FilePlus2, Check, KeyRound, RotateCcw } from "lucide-react";
 import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
 import ModalStatutVehicule from "@/components/proprietaire/ModalStatutVehicule";
@@ -180,8 +181,13 @@ export default function ListeVehicules({
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-[#eeeeef] sm:h-24 sm:w-32">
                     {v.photos?.[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={v.photos[0]} alt={`${v.marque} ${v.modele}`} className="h-full w-full object-cover" />
+                      <Image
+                        src={v.photos[0]}
+                        alt={`${v.marque} ${v.modele}`}
+                        fill
+                        sizes="(max-width: 640px) 96px, 128px"
+                        className="object-cover"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <Car size={28} strokeWidth={1.25} className="text-dash-dark/30" />
