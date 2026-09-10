@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { TAG_VEHICULES } from "@/lib/catalogue";
 import { exigerStaffAction, exigerAdminAction } from "@/lib/admin/auth";
 
 export async function validerProprietaire(
@@ -42,6 +43,7 @@ export async function changerStatutVehicule(
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/vehicules");
+  updateTag(TAG_VEHICULES);
 }
 
 export async function changerRole(

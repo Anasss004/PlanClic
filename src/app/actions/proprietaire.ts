@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { TAG_VEHICULES } from "@/lib/catalogue";
 import { validerFichier } from "@/lib/validation-fichiers";
 import { construireContratPdf } from "@/lib/contrat-pdf";
 import { construireLienWhatsApp } from "@/lib/whatsapp";
@@ -181,6 +182,8 @@ export async function ajouterVehicule(formData: FormData) {
     redirect("/proprietaire/vehicules/nouveau?erreur=creation");
   }
 
+  updateTag(TAG_VEHICULES);
+
   redirect("/proprietaire/vehicules");
 }
 
@@ -336,6 +339,7 @@ export async function modifierVehicule(vehiculeId: string, formData: FormData) {
 
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
   redirect(`/proprietaire/vehicules/${vehiculeId}?message=vehicule-modifie`);
 }
 
@@ -354,6 +358,7 @@ export async function basculerStatutVehicule(vehiculeId: string, statutActuel: s
   if (error) throw new Error(error.message);
 
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
 }
 
@@ -403,6 +408,7 @@ export async function supprimerPhotoVehicule(vehiculeId: string, url: string) {
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}/modifier`);
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
 }
 
 export async function definirPhotoCouverture(vehiculeId: string, url: string) {
@@ -420,6 +426,7 @@ export async function definirPhotoCouverture(vehiculeId: string, url: string) {
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}/modifier`);
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
 }
 
 // ------------------------------------------------------------
@@ -436,6 +443,7 @@ export async function supprimerVehicule(vehiculeId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
 }
 
 // ------------------------------------------------------------
@@ -883,6 +891,7 @@ export async function changerStatutOperationnelVehicule(
   }
 
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
   revalidatePath("/proprietaire/dashboard");
   revalidatePath("/proprietaire/calendrier");
@@ -969,6 +978,7 @@ export async function enregistrerRetourVehicule({
 
   revalidatePath("/proprietaire/dashboard");
   revalidatePath("/proprietaire/vehicules");
+  updateTag(TAG_VEHICULES);
   revalidatePath("/proprietaire/reservations");
   revalidatePath("/proprietaire/calendrier");
   revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);

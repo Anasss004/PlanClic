@@ -1,5 +1,5 @@
 import { Car, Bike, Truck, MapPin, Fuel, Gauge, Users, DoorOpen, ShieldCheck, Check } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { lireVehiculePublic, lireAgencePublique } from "@/lib/catalogue";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/motion/Reveal";
@@ -29,21 +29,13 @@ export default async function VehiculeDetailPage({
   const { id } = await params;
   const sp = await searchParams;
 
-  const supabase = await createClient();
+  // Fiche et agence mises en cache (tag "vehicules", invalidé à chaque
+  // écriture sur un véhicule) — mêmes vues publiques, mêmes colonnes.
+  const vehicule = await lireVehiculePublic(id);
 
-  const { data: vehicule } = await supabase
-    .from("vehicules_recherche")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  const { data: proprietaire } = vehicule
-    ? await supabase
-        .from("proprietaires_public")
-        .select("nom_entreprise, ville")
-        .eq("id", vehicule.proprietaire_id)
-        .single()
-    : { data: null };
+  const proprietaire = vehicule
+    ? await lireAgencePublique(vehicule.proprietaire_id)
+    : null;
 
   if (!vehicule) {
     return (

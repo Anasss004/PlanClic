@@ -1,6 +1,7 @@
 import { Car } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getUtilisateurEtProfil } from "@/lib/utilisateur";
+import { lireCatalogue, lireAgencesPubliques } from "@/lib/catalogue";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/ui/EmptyState";
 import Reveal from "@/components/motion/Reveal";
@@ -50,16 +51,16 @@ export default async function RecherchePage({
     : null;
 
   // 1. Véhicules correspondant aux critères (vue publique : uniquement
-  // actifs, agences vérifiées, sans immatriculation).
-  let requete = supabase.from("vehicules_recherche").select("*");
-  if (type) requete = requete.eq("type", type);
-  if (ville) requete = requete.eq("ville", ville);
-  if (transmission) requete = requete.eq("transmission", transmission);
-  if (carburant) requete = requete.eq("carburant", carburant);
-  if (passagers_min) requete = requete.gte("places", Number(passagers_min));
-  if (prix_max) requete = requete.lte("prix_jour", Number(prix_max));
-
-  const { data: vehiculesCorrespondants } = await requete;
+  // actifs, agences vérifiées, sans immatriculation). Mis en cache par jeu
+  // de filtres — mêmes filtres, même ordre, mêmes colonnes qu'avant.
+  const vehiculesCorrespondants = await lireCatalogue({
+    type,
+    ville,
+    transmission,
+    carburant,
+    passagersMin: passagers_min,
+    prixMax: prix_max,
+  });
 
   // 2. Exclusion des véhicules déjà réservés (confirmés) sur la
   // période demandée — vraie vérification de disponibilité.
@@ -89,13 +90,8 @@ export default async function RecherchePage({
   const idsProprietaires = [
     ...new Set(vehiculesDisponibles.map((v) => v.proprietaire_id)),
   ];
-  const { data: agences } = idsProprietaires.length
-    ? await supabase
-        .from("proprietaires_public")
-        .select("id, nom_entreprise")
-        .in("id", idsProprietaires)
-    : { data: [] };
-  const agenceParId = new Map((agences ?? []).map((a) => [a.id, a.nom_entreprise]));
+  const agences = await lireAgencesPubliques(idsProprietaires);
+  const agenceParId = new Map(agences.map((a) => [a.id, a.nom_entreprise]));
 
   const nbJours =
     date_debut && date_fin
