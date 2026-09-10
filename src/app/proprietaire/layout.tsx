@@ -17,6 +17,7 @@ import {
   Bell,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUtilisateurEtProfil } from "@/lib/utilisateur";
 import { seDeconnecter } from "@/app/actions/auth";
 import { getImpersonation } from "@/lib/impersonation";
 import NavLink from "@/components/proprietaire/NavLink";
@@ -43,19 +44,16 @@ export default async function ProprietaireLayout({
 }) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/connexion");
-
+  // getUtilisateurEtProfil() est mémorisé par requête : la page rendue à
+  // l'intérieur de ce layout réutilise le même résultat sans refaire d'appel.
   // Le profil et le contexte d'impersonation ne dépendent pas l'un de l'autre :
   // getImpersonation() ne lit que le cookie et sa propre session.
-  const [{ data: profile }, impersonation] = await Promise.all([
-    supabase.from("profiles").select("role, prenom, nom").eq("id", user.id).single(),
+  const [{ user, profil: profile }, impersonation] = await Promise.all([
+    getUtilisateurEtProfil(),
     getImpersonation(),
   ]);
 
+  if (!user) redirect("/connexion");
   if (!profile) redirect("/connexion");
 
   if (!impersonation && profile.role !== "proprietaire") {

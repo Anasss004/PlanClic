@@ -1,5 +1,6 @@
 import { Car } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUtilisateurEtProfil } from "@/lib/utilisateur";
 import Footer from "@/components/Footer";
 import EmptyState from "@/components/ui/EmptyState";
 import Reveal from "@/components/motion/Reveal";
@@ -41,19 +42,12 @@ export default async function RecherchePage({
 
   const supabase = await createClient();
 
-  // Profil connecté (pour le header) — même logique que le Header global.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  let profile: { prenom: string; nom: string; role: string } | null = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("prenom, nom, role")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-  }
+  // Profil connecté (pour le header) — même logique que le Header global,
+  // mémorisée par requête.
+  const { profil } = await getUtilisateurEtProfil();
+  const profile = profil
+    ? { prenom: profil.prenom ?? "", nom: profil.nom ?? "", role: profil.role }
+    : null;
 
   // 1. Véhicules correspondant aux critères (vue publique : uniquement
   // actifs, agences vérifiées, sans immatriculation).

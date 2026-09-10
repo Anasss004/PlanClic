@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getUtilisateurEtProfil } from "@/lib/utilisateur";
 
 // ============================================================
 // Impersonation ("Se connecter en tant que") — mode SUPPORT.
@@ -30,19 +31,13 @@ export async function getImpersonation(): Promise<ContexteImpersonation | null> 
   const cible = jar.get(COOKIE_IMPERSONATION)?.value;
   if (!cible) return null;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Mêmes données qu'avant, mais mutualisées avec le reste du rendu.
+  const { user, profil } = await getUtilisateurEtProfil();
   if (!user) return null;
 
-  const { data: profil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
   if (!profil || !["support", "admin"].includes(profil.role)) return null;
+
+  const supabase = await createClient();
 
   const { data: agence } = await supabase
     .from("proprietaires")

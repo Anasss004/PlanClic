@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getUtilisateurEtProfil } from "@/lib/utilisateur";
 import ProfileMenu from "@/components/ProfileMenu";
 import HeaderShell from "@/components/HeaderShell";
 import MenuMobilePublic from "@/components/MenuMobilePublic";
@@ -13,21 +13,10 @@ const NAV_LINKS = [
 ];
 
 export default async function Header() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile: { prenom: string; nom: string; role: string } | null = null;
-
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("prenom, nom, role")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-  }
+  const { profil } = await getUtilisateurEtProfil();
+  const profile = profil
+    ? { prenom: profil.prenom ?? "", nom: profil.nom ?? "", role: profil.role }
+    : null;
 
   return (
     <HeaderShell>

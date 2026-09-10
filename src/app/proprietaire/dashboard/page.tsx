@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getUtilisateur } from "@/lib/utilisateur";
 import { resoudreProprietaireId } from "@/lib/impersonation";
 import { formaterDate, formaterPeriode } from "@/lib/dates";
 import StatCard from "@/components/ui/StatCard";
@@ -47,9 +48,9 @@ const LABELS_STATUT: Record<string, { label: string; variant: "warning" | "succe
 
 export default async function DashboardProprietairePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Mémorisé par requête : le layout a déjà résolu l'utilisateur, aucun
+  // second aller-retour réseau ne part ici.
+  const user = await getUtilisateur();
   const { id: pid } = await resoudreProprietaireId(user!.id);
 
   const aujourdhui = new Date().toISOString().slice(0, 10);

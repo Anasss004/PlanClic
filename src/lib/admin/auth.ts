@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getUtilisateurEtProfil } from "@/lib/utilisateur";
 
 export type ProfilStaff = {
   id: string;
@@ -16,24 +16,17 @@ export type ProfilStaff = {
 // redirection propre (jamais de page blanche / d'erreur brute).
 // ------------------------------------------------------------
 export async function exigerStaff(): Promise<ProfilStaff> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Mémorisé par requête : exigerStaff() est appelé à la fois dans le layout
+  // admin et dans chaque page, mais un seul appel réseau part réellement.
+  const { user, profil } = await getUtilisateurEtProfil();
 
   if (!user) redirect("/connexion");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role, prenom, nom, email")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !["support", "admin"].includes(profile.role)) {
+  if (!profil || !["support", "admin"].includes(profil.role)) {
     redirect("/");
   }
 
-  return profile as ProfilStaff;
+  return profil as ProfilStaff;
 }
 
 export async function exigerAdmin(): Promise<ProfilStaff> {
@@ -47,22 +40,13 @@ export async function exigerAdmin(): Promise<ProfilStaff> {
 // Variante pour Server Actions : lève au lieu de rediriger, pour que
 // le message remonte dans un toast côté client.
 export async function exigerStaffAction(): Promise<ProfilStaff> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profil } = await getUtilisateurEtProfil();
   if (!user) throw new Error("Non authentifié.");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role, prenom, nom, email")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !["support", "admin"].includes(profile.role)) {
+  if (!profil || !["support", "admin"].includes(profil.role)) {
     throw new Error("Action réservée à l'équipe PlanClic.");
   }
-  return profile as ProfilStaff;
+  return profil as ProfilStaff;
 }
 
 export async function exigerAdminAction(): Promise<ProfilStaff> {
