@@ -67,6 +67,12 @@ export default async function ProprietaireLayout({
   const dans30j = new Date();
   dans30j.setDate(dans30j.getDate() + 30);
 
+  // Les trois compteurs de pastilles passent en count "estimated" : PostgREST
+  // renvoie un COUNT(*) exact tant que le nombre reste faible, et bascule sur
+  // l'estimation du planificateur au-delà — là où la pastille affiche de toute
+  // façon "99+". Les valeurs montrées restent donc identiques dans la plage
+  // réellement affichée, sans imposer un COUNT(*) complet à chaque page.
+  //
   // Les quatre requêtes suivantes ne dépendent que de proprietaireId : elles
   // partent ensemble au lieu de s'enchaîner. Les compteurs sont désormais
   // lancés même dans le cas où l'agence est introuvable (redirection juste
@@ -85,17 +91,17 @@ export default async function ProprietaireLayout({
       .single(),
     supabase
       .from("reservations")
-      .select("*", { count: "exact", head: true })
+      .select("*", { count: "estimated", head: true })
       .eq("proprietaire_id", proprietaireId)
       .eq("statut", "en_attente"),
     supabase
       .from("notifications")
-      .select("*", { count: "exact", head: true })
+      .select("*", { count: "estimated", head: true })
       .eq("destinataire_id", proprietaireId)
       .is("lu_le", null),
     supabase
       .from("documents_vehicule")
-      .select("*", { count: "exact", head: true })
+      .select("*", { count: "estimated", head: true })
       .eq("proprietaire_id", proprietaireId)
       .lte("date_expiration", dans30j.toISOString().slice(0, 10)),
   ]);
