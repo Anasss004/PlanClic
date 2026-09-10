@@ -198,7 +198,7 @@ export default async function ProprietaireLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)]">
+    <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)] max-lg:flex-col">
       {/* Palette de commande Cmd+K universelle */}
       <CommandPalette />
 
@@ -243,7 +243,7 @@ export default async function ProprietaireLayout({
             </span>
           </div>
         )}
-        <main className="mx-auto max-w-6xl px-6 py-8 lg:px-10">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-8 lg:px-10 max-sm:px-4 max-sm:py-6">{children}</main>
       </div>
     </div>
   );

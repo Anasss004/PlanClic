@@ -119,7 +119,7 @@ export default async function VehiculeDetailPage({
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between max-sm:flex-wrap max-sm:gap-3">
         <Link
           href="/proprietaire/vehicules"
           className="flex items-center gap-1.5 text-sm text-dash-text-secondary hover:text-dash-dark"

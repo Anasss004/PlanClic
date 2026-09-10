@@ -44,7 +44,7 @@ export default async function ReservationsPage({
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Réservations</h1>
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">Réservations</h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
           {liste.length} réservation(s) au total
           {nbEnAttente > 0 && (

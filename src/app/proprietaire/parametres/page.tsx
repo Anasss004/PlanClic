@@ -31,7 +31,7 @@ export default async function ParametresPage({
   return (
     <div className="mx-auto max-w-3xl font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
           Paramètres de l&apos;Agence
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
@@ -120,7 +120,7 @@ export default async function ParametresPage({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-dash-text-secondary">
                 Spécialité

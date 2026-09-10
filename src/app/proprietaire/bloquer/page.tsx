@@ -43,7 +43,7 @@ export default async function NouvelleLocationPage({
 
   return (
     <div className="mx-auto max-w-2xl font-[family-name:var(--font-jakarta)]">
-      <h1 className="mb-1 flex items-center gap-2 text-[32px] font-bold tracking-tight text-dash-dark">
+      <h1 className="mb-1 flex items-center gap-2 text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
         <FilePlus2 size={26} strokeWidth={1.75} />
         Nouvelle location
       </h1>

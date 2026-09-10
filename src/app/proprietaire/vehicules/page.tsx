@@ -58,9 +58,9 @@ export default async function VehiculesPage() {
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between max-sm:flex-col max-sm:gap-4">
         <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Ma Flotte</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">Ma Flotte</h1>
           <p className="mt-1 text-sm text-dash-text-secondary">
             {vehicules?.length ?? 0} véhicule(s) publié(s)
           </p>

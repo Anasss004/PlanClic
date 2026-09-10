@@ -20,7 +20,7 @@ export default async function StatistiquesPage() {
     return (
       <div className="font-[family-name:var(--font-jakarta)]">
         <div className="mb-8">
-          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
             Statistiques & Rapports
           </h1>
         </div>
@@ -117,7 +117,7 @@ export default async function StatistiquesPage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
           Statistiques & Rapports
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">

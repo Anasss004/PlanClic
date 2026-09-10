@@ -201,7 +201,7 @@ export default async function DashboardProprietairePage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)] space-y-8">
       <div>
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
           Tableau de bord
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
