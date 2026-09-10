@@ -104,9 +104,9 @@ export default async function CalendrierPage({
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       {/* En-tête */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between max-sm:flex-col max-sm:gap-4">
         <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
             Calendrier des Réservations
           </h1>
           <p className="mt-1 text-sm text-dash-text-secondary">
@@ -179,7 +179,106 @@ export default async function CalendrierPage({
           description="Ajoutez des véhicules pour voir apparaître leur calendrier de disponibilité."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-dash-border bg-white">
+        <>
+        {/* Vue liste — remplace le Gantt sous 1024px, où 180px + 30 x 90px de
+            colonnes imposaient un scroll horizontal de près de 3000px.
+            Mêmes données, agrégées par véhicule puis par date. */}
+        <div className="hidden space-y-3 max-lg:block">
+          {vehicules.map((v) => {
+            const evenements = [
+              ...(reservations ?? [])
+                .filter((r) => r.vehicule_id === v.id)
+                .map((r) => {
+                  const profil = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                  return {
+                    id: `r-${r.id}`,
+                    tri: r.date_debut,
+                    type: "reservation" as const,
+                    confirmee: r.statut === "confirmee",
+                    titre:
+                      r.source === "manuel"
+                        ? r.nom_client_manuel ?? "Client"
+                        : `${profil?.prenom ?? ""} ${profil?.nom ?? ""}`.trim() || "Client",
+                    periode: formaterPeriode(r.date_debut, r.date_fin),
+                    horaires:
+                      r.heure_debut || r.heure_fin
+                        ? `${formaterHeure(r.heure_debut) || "?"} → ${formaterHeure(r.heure_fin) || "?"}`
+                        : null,
+                    lieu: r.lieu_debut ?? null,
+                  };
+                }),
+              ...(maintenances ?? [])
+                .filter((m) => m.vehicule_id === v.id)
+                .map((m) => ({
+                  id: `m-${m.id}`,
+                  tri: m.date_intervention,
+                  type: "maintenance" as const,
+                  confirmee: false,
+                  titre: LABELS_MAINTENANCE[m.type] ?? "Révision",
+                  periode: formaterPeriode(m.date_intervention, m.date_intervention),
+                  horaires: null,
+                  lieu: null,
+                })),
+            ].sort((a, b) => a.tri.localeCompare(b.tri));
+
+            return (
+              <div
+                key={v.id}
+                className="overflow-hidden rounded-xl border border-dash-border bg-white"
+              >
+                <div className="flex items-baseline justify-between gap-3 border-b border-dash-border bg-gray-50 px-4 py-3">
+                  <p className="truncate text-sm font-bold text-dash-text">
+                    {v.marque} {v.modele}
+                  </p>
+                  <p className="shrink-0 font-mono text-xs text-dash-text-secondary">
+                    {v.immatriculation}
+                  </p>
+                </div>
+
+                {evenements.length === 0 ? (
+                  <p className="px-4 py-3 text-xs text-dash-text-secondary">
+                    Aucune réservation sur la période.
+                  </p>
+                ) : (
+                  <ul className="divide-y divide-dash-border">
+                    {evenements.map((e) => (
+                      <li key={e.id} className="flex items-start gap-3 px-4 py-3">
+                        <span
+                          className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                            e.type === "maintenance"
+                              ? "bg-gray-400"
+                              : e.confirmee
+                              ? "bg-dash-sidebar"
+                              : "bg-dash-accent"
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-1.5 text-sm font-semibold text-dash-text">
+                            {e.type === "maintenance" && (
+                              <Wrench size={12} strokeWidth={2} className="shrink-0 text-gray-500" />
+                            )}
+                            <span className="truncate">{e.titre}</span>
+                          </p>
+                          <p className="text-xs text-dash-text-secondary">{e.periode}</p>
+                          {e.horaires && (
+                            <p className="text-xs text-dash-text-secondary">{e.horaires}</p>
+                          )}
+                          {e.lieu && (
+                            <p className="truncate text-xs text-dash-text-secondary">
+                              Lieu : {e.lieu}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-dash-border bg-white max-lg:hidden">
           <div style={{ minWidth: `${180 + nbJours * 90}px` }}>
             {/* En-tête des jours */}
             <div
@@ -289,6 +388,7 @@ export default async function CalendrierPage({
             <div className="h-24" />
           </div>
         </div>
+        </>
       )}
     </div>
   );
