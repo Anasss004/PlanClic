@@ -3,10 +3,10 @@ import Reveal from "@/components/motion/Reveal";
 
 export default function OwnerBanner() {
   return (
-    <section className="mx-auto mt-12 max-w-[1280px] px-6">
+    <section className="mx-auto mt-12 max-w-[1280px] px-6 max-sm:px-4">
       <Reveal>
         <div
-          className="relative overflow-hidden rounded-2xl p-8 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)] md:p-12"
+          className="relative overflow-hidden rounded-2xl p-8 shadow-[0px_0px_4px_0px_rgba(0,0,0,0.25)] md:p-12 max-sm:p-6"
           style={{
             backgroundImage: "linear-gradient(90deg, #155263 40%, #beced3)",
           }}

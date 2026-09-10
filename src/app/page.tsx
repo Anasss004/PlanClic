@@ -11,7 +11,7 @@ export default function HomePage() {
     <>
       <Header />
 
-      <main className="mx-auto w-full max-w-[1280px] flex-1 px-6">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 max-sm:px-4">
         <SearchHero />
         <PromoBanner />
         <PopularAgencies />

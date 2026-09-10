@@ -5,7 +5,7 @@ const SOCIALS = ["Instagram", "Facebook", "X", "TikTok", "LinkedIn"];
 export default function Footer() {
   return (
     <footer className="mt-16 bg-brand-light/50">
-      <div className="mx-auto max-w-[1280px] px-6 py-12">
+      <div className="mx-auto max-w-[1280px] px-6 py-12 max-sm:px-4 max-sm:py-8">
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <p className="mb-4 w-fit rounded-xl bg-brand-accent px-4 py-2 font-[family-name:var(--font-bagel)] text-2xl text-brand-dark">
@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex gap-3">
+        <div className="mt-8 flex gap-3 max-sm:flex-col">
           <Link
             href="/inscription"
             className="rounded-full bg-brand-dark px-6 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:brightness-125 active:scale-95"

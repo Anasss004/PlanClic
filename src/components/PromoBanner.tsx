@@ -4,7 +4,7 @@ export default function PromoBanner() {
   return (
     <Reveal delay={80}>
       <section className="mt-8 flex flex-col overflow-hidden rounded-2xl md:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-3 bg-brand-accent p-8">
+        <div className="flex flex-1 flex-col justify-center gap-3 bg-brand-accent p-8 max-sm:p-6">
           <p className="font-[family-name:var(--font-bagel)] text-3xl text-brand-dark">
             Découvrez les Meilleures
           </p>

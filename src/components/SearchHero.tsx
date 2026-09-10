@@ -67,19 +67,19 @@ export default function SearchHero() {
         }}
       />
 
-      <div className="relative grid gap-8 p-8 md:grid-cols-2 md:p-12">
+      <div className="relative grid gap-8 p-8 md:grid-cols-2 md:p-12 max-sm:gap-6 max-sm:p-4">
         {/* Carte de recherche */}
         <Reveal>
           <form
             method="GET"
             action="/recherche"
             onSubmit={() => setRecherche(true)}
-            className="rounded-2xl bg-white/80 p-6 backdrop-blur"
+            className="rounded-2xl bg-white/80 p-6 backdrop-blur max-sm:p-4"
           >
             <input type="hidden" name="type" value={type} />
 
             {/* Type de véhicule */}
-            <div className="mb-4 flex gap-2">
+            <div className="mb-4 flex gap-2 max-sm:flex-wrap max-sm:gap-1.5">
               {TYPES.map((t) => {
                 const Icon = t.icon;
                 const actif = type === t.key;
@@ -88,7 +88,7 @@ export default function SearchHero() {
                     key={t.key}
                     type="button"
                     onClick={() => setType(t.key)}
-                    className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                    className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 active:scale-95 max-sm:px-3 ${
                       actif
                         ? "bg-brand-dark text-white"
                         : "bg-brand-light text-brand-dark hover:bg-brand-light/70"
@@ -122,7 +122,7 @@ export default function SearchHero() {
             </select>
 
             {/* Dates */}
-            <div className="mb-6 grid grid-cols-2 gap-3">
+            <div className="mb-6 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-brand-dark">
                   Date de départ
@@ -140,7 +140,7 @@ export default function SearchHero() {
             <button
               type="submit"
               disabled={recherche}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-accent py-2 text-sm font-semibold text-brand-dark transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-default disabled:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/30"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-accent py-2 max-sm:py-3 text-sm font-semibold text-brand-dark transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-default disabled:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/30"
             >
               {recherche ? (
                 <>
@@ -155,7 +155,7 @@ export default function SearchHero() {
         </Reveal>
 
         {/* Texte accroche */}
-        <Reveal delay={150} className="flex items-end justify-center md:justify-start">
+        <Reveal delay={150} className="flex items-end justify-center md:justify-start max-md:order-first max-md:justify-start">
           <p className="font-[family-name:var(--font-bagel)] text-3xl leading-tight text-white drop-shadow-lg md:text-[36px]">
             Louez <span className="text-brand-accent">|</span> la voiture qui
             vous correspond

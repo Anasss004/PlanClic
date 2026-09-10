@@ -4,7 +4,7 @@ import { VILLES } from "@/lib/villes";
 export default function CitiesGrid() {
   return (
     <section className="mt-12 bg-brand-light/30 py-12">
-      <div className="mx-auto max-w-[1280px] px-6">
+      <div className="mx-auto max-w-[1280px] px-6 max-sm:px-4">
         <Reveal>
           <h2 className="mb-8 text-center font-[family-name:var(--font-bagel)] text-3xl text-brand-dark">
             Disponible partout au Maroc
