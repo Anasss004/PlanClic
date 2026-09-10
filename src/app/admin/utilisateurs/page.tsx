@@ -15,7 +15,7 @@ export default async function UtilisateursPage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
           Utilisateurs
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
@@ -30,7 +30,50 @@ export default async function UtilisateursPage() {
           description="Les comptes créés sur la plateforme apparaîtront ici."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-dash-border bg-white shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
+        <>
+        {/* Vue cartes — remplace le tableau sous 768px. Mêmes données. */}
+        <div className="hidden space-y-3 max-md:block">
+          {utilisateurs.map((u) => (
+            <div
+              key={u.id}
+              className="rounded-xl border border-dash-border bg-white p-4 shadow-[0px_4px_10px_rgba(43,76,91,0.05)]"
+            >
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <p className="min-w-0 text-sm font-semibold text-dash-text">
+                  {u.role === "proprietaire" ? (
+                    <Link
+                      href={`/admin/agences/${u.id}`}
+                      className="text-dash-dark underline decoration-dash-border underline-offset-2 hover:decoration-dash-dark"
+                    >
+                      {u.prenom} {u.nom}
+                    </Link>
+                  ) : (
+                    <>
+                      {u.prenom} {u.nom}
+                    </>
+                  )}
+                </p>
+                <span className="shrink-0">
+                  <Badge
+                    variant={
+                      u.role === "admin" || u.role === "support"
+                        ? "brand"
+                        : u.role === "proprietaire"
+                        ? "info"
+                        : "neutral"
+                    }
+                  >
+                    {u.role}
+                  </Badge>
+                </span>
+              </div>
+              <p className="break-all text-xs text-dash-text-secondary">{u.email}</p>
+              <p className="text-xs text-dash-text-secondary">{u.telephone ?? "—"}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-dash-border bg-white shadow-[0px_4px_10px_rgba(43,76,91,0.05)] max-md:hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-dash-border bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-dash-text-secondary">
@@ -77,6 +120,7 @@ export default async function UtilisateursPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

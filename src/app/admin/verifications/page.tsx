@@ -42,7 +42,7 @@ export default async function VerificationsPage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Vérifications</h1>
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">Vérifications</h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
           Comptes propriétaires et documents en attente de validation.
         </p>

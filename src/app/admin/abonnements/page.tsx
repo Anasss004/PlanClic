@@ -33,7 +33,7 @@ export default async function AdminAbonnementsPage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Abonnements</h1>
+        <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">Abonnements</h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
           Attribution manuelle des plans (pas de paiement automatique pour
           l&apos;instant).

@@ -122,7 +122,7 @@ export default async function AdminLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)]">
+    <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)] max-lg:flex-col">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col justify-between bg-dash-sidebar px-8 py-8 lg:flex">
         {contenuSidebar}
       </aside>
@@ -132,7 +132,7 @@ export default async function AdminLayout({
       </MobileDrawer>
 
       <div className="flex-1 lg:pl-64">
-        <main className="mx-auto max-w-6xl px-6 py-8 lg:px-10">{children}</main>
+        <main className="mx-auto max-w-6xl px-6 py-8 lg:px-10 max-sm:px-4 max-sm:py-6">{children}</main>
       </div>
     </div>
   );

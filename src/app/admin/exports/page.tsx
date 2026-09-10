@@ -25,7 +25,7 @@ export default async function ExportsPage() {
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
       <div className="mb-8">
-        <h1 className="flex items-center gap-2 text-[32px] font-bold tracking-tight text-dash-dark">
+        <h1 className="flex items-center gap-2 text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">
           <FileSpreadsheet size={26} strokeWidth={1.75} />
           Exports
         </h1>

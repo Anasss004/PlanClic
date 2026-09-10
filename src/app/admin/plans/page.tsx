@@ -14,9 +14,9 @@ export default async function AdminPlansPage() {
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]">
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between max-sm:flex-col max-sm:gap-4">
         <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">Plans</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-dash-dark max-sm:text-[24px]">Plans</h1>
           <p className="mt-1 text-sm text-dash-text-secondary">
             Les packs proposés aux propriétaires. Aucun paiement automatique
             pour l&apos;instant — attribution manuelle depuis "Abonnements".
