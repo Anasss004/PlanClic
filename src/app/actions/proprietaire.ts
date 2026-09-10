@@ -674,7 +674,27 @@ export async function creerLocationManuelle(formData: FormData) {
   );
 
   if (error || !nouvelId) {
-    redirect("/proprietaire/bloquer?erreur=creation");
+    // L'erreur Postgres n'était pas journalisée et la page affichait un
+    // libellé accusant un chevauchement de dates quel que soit le motif
+    // réel : c'est ce qui a masqué durablement une simple erreur de type
+    // SQL dans la fonction RPC. On trace le motif exact, et on ne parle de
+    // chevauchement que si c'en est vraiment un (23P01 = exclusion_violation,
+    // levé par la contrainte no_overlap_confirmed).
+    console.error("[creerLocationManuelle] échec de la RPC", {
+      code: error?.code,
+      message: error?.message,
+      details: error?.details,
+      hint: error?.hint,
+      vehiculeId,
+      dateDebut,
+      dateFin,
+    });
+
+    redirect(
+      error?.code === "23P01"
+        ? "/proprietaire/bloquer?erreur=dates-chevauchement"
+        : "/proprietaire/bloquer?erreur=creation"
+    );
   }
 
   // Génération du contrat — non bloquante : si elle échoue, la location
