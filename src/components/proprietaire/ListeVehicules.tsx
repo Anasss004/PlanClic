@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Car, Wrench, TrendingUp, Search, FilePlus2 } from "lucide-react";
+import { Car, Wrench, TrendingUp, Search, FilePlus2, Check, KeyRound, RotateCcw } from "lucide-react";
 import MenuActionsVehicule from "@/components/proprietaire/MenuActionsVehicule";
+import ModalStatutVehicule from "@/components/proprietaire/ModalStatutVehicule";
+import ModalRetourVehicule from "@/components/proprietaire/ModalRetourVehicule";
 import { formaterDate } from "@/lib/dates";
 
 type Vehicule = {
@@ -14,6 +16,8 @@ type Vehicule = {
   ville: string;
   categorie: string | null;
   statut: string;
+  statut_operationnel?: string | null;
+  kilometrage_actuel?: number | null;
   prix_jour: number;
   photos: string[] | null;
 };
@@ -23,6 +27,13 @@ const LABELS_CATEGORIE: Record<string, string> = {
   berline_luxe: "Berline Luxe",
   suv_4x4: "SUV & 4x4",
 };
+
+const FILTRES_STATUT_OP = [
+  { value: "tous", label: "Toute la flotte" },
+  { value: "disponible", label: "🟢 Disponibles (En agence)" },
+  { value: "livree", label: "🔵 En location (Livrés)" },
+  { value: "maintenance", label: "🛠️ En maintenance" },
+];
 
 const PAR_PAGE = 20;
 
@@ -38,7 +49,10 @@ export default function ListeVehicules({
   const [recherche, setRecherche] = useState("");
   const [ville, setVille] = useState("");
   const [categorie, setCategorie] = useState("");
+  const [filtreOp, setFiltreOp] = useState("tous");
   const [page, setPage] = useState(1);
+  const [vehiculeModalStatut, setVehiculeModalStatut] = useState<Vehicule | null>(null);
+  const [vehiculeModalRetour, setVehiculeModalRetour] = useState<Vehicule | null>(null);
 
   const villes = useMemo(
     () => [...new Set(vehicules.map((v) => v.ville).filter(Boolean))].sort(),
@@ -54,10 +68,14 @@ export default function ListeVehicules({
     return vehicules.filter((v) => {
       if (ville && v.ville !== ville) return false;
       if (categorie && v.categorie !== categorie) return false;
+      if (filtreOp !== "tous") {
+        const stOp = v.statut_operationnel || "disponible";
+        if (stOp !== filtreOp) return false;
+      }
       if (!q) return true;
       return `${v.marque} ${v.modele} ${v.immatriculation}`.toLowerCase().includes(q);
     });
-  }, [vehicules, recherche, ville, categorie]);
+  }, [vehicules, recherche, ville, categorie, filtreOp]);
 
   const totalPages = Math.max(1, Math.ceil(filtres.length / PAR_PAGE));
   const pageSure = Math.min(page, totalPages);
@@ -68,6 +86,53 @@ export default function ListeVehicules({
 
   return (
     <div>
+      {/* Modal de changement rapide d'état opérationnel */}
+      {vehiculeModalStatut && (
+        <ModalStatutVehicule
+          vehiculeId={vehiculeModalStatut.id}
+          marqueModele={`${vehiculeModalStatut.marque} ${vehiculeModalStatut.modele}`}
+          immatriculation={vehiculeModalStatut.immatriculation}
+          statutActuel={vehiculeModalStatut.statut_operationnel || "disponible"}
+          kilometrageActuel={vehiculeModalStatut.kilometrage_actuel}
+          ouvert={!!vehiculeModalStatut}
+          onFermer={() => setVehiculeModalStatut(null)}
+        />
+      )}
+
+      {/* Modal de restitution / retour de véhicule */}
+      {vehiculeModalRetour && (
+        <ModalRetourVehicule
+          vehiculeId={vehiculeModalRetour.id}
+          marqueModele={`${vehiculeModalRetour.marque} ${vehiculeModalRetour.modele}`}
+          immatriculation={vehiculeModalRetour.immatriculation}
+          kilometrageDepart={vehiculeModalRetour.kilometrage_actuel}
+          ouvert={!!vehiculeModalRetour}
+          onFermer={() => setVehiculeModalRetour(null)}
+        />
+      )}
+
+      {/* Onglets rapides de filtrage par état de flotte */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {FILTRES_STATUT_OP.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => {
+              setFiltreOp(f.value);
+              setPage(1);
+            }}
+            className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+              filtreOp === f.value
+                ? "bg-dash-sidebar text-white shadow-xs"
+                : "bg-white text-dash-text-secondary border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Recherche + filtres ville / catégorie */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search size={15} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-dash-text-secondary" />
@@ -105,84 +170,127 @@ export default function ListeVehicules({
           {visibles.map((v) => {
             const revenu = revenus[v.id] ?? 0;
             const entretien = derniersEntretiens[v.id];
+            const stOp = v.statut_operationnel || "disponible";
+
             return (
               <div
                 key={v.id}
-                className="group flex items-center gap-4 rounded-xl border border-white/30 bg-white p-3 shadow-[0px_4px_20px_rgba(18,53,68,0.05)] transition-shadow hover:shadow-[0px_8px_24px_rgba(18,53,68,0.1)] sm:gap-6 sm:p-4"
+                className="card-lift group flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-[#eeeeef] sm:h-24 sm:w-32">
-                  {v.photos?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.photos[0]} alt={`${v.marque} ${v.modele}`} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <Car size={28} strokeWidth={1.25} className="text-dash-dark/30" />
-                    </div>
-                  )}
-                </div>
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="relative h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-[#eeeeef] sm:h-24 sm:w-32">
+                    {v.photos?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={v.photos[0]} alt={`${v.marque} ${v.modele}`} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Car size={28} strokeWidth={1.25} className="text-dash-dark/30" />
+                      </div>
+                    )}
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}`}
-                    className="truncate text-lg font-semibold text-dash-text hover:text-dash-dark hover:underline sm:text-xl"
-                  >
-                    {v.marque} {v.modele}
-                  </Link>
-                  <p className="font-mono text-xs text-dash-text-secondary sm:text-sm">{v.immatriculation}</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    {revenu > 0 && (
-                      <span className="flex items-center gap-1 text-xs font-medium text-[#006c4a]">
-                        <TrendingUp size={12} strokeWidth={2} />
-                        {revenu.toLocaleString("fr-FR")} MAD générés
-                      </span>
-                    )}
-                    {entretien && (
-                      <span className="hidden items-center gap-1 text-xs text-dash-text-secondary sm:flex">
-                        <Wrench size={12} strokeWidth={1.75} />
-                        Entretien : {formaterDate(entretien)}
-                      </span>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/proprietaire/vehicules/${v.id}`}
+                        className="truncate text-base font-bold text-dash-dark hover:underline sm:text-lg"
+                      >
+                        {v.marque} {v.modele}
+                      </Link>
+
+                      {/* Badge d'état opérationnel 1-clic */}
+                      <button
+                        type="button"
+                        onClick={() => setVehiculeModalStatut(v)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold border transition hover:brightness-95 ${
+                          stOp === "livree"
+                            ? "bg-sky-50 text-sky-800 border-sky-200"
+                            : stOp === "maintenance"
+                            ? "bg-amber-50 text-amber-800 border-amber-200"
+                            : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        }`}
+                        title="Cliquer pour changer l'état du véhicule"
+                      >
+                        {stOp === "livree" ? (
+                          <>
+                            <KeyRound size={12} /> Livrée (En location)
+                          </>
+                        ) : stOp === "maintenance" ? (
+                          <>
+                            <Wrench size={12} /> En Maintenance
+                          </>
+                        ) : (
+                          <>
+                            <Check size={12} /> Disponible (En agence)
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <p className="font-mono text-xs text-dash-text-secondary">{v.immatriculation}</p>
+
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {revenu > 0 && (
+                        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                          <TrendingUp size={12} strokeWidth={2} />
+                          {revenu.toLocaleString("fr-FR")} MAD générés
+                        </span>
+                      )}
+                      {entretien && (
+                        <span className="hidden items-center gap-1 text-xs text-dash-text-secondary sm:flex">
+                          <Wrench size={12} strokeWidth={1.75} />
+                          Entretien : {formaterDate(entretien)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="hidden shrink-0 flex-col items-end gap-1 sm:flex">
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${
-                      v.statut === "actif"
-                        ? "border-dash-accent/30 bg-dash-accent/20 text-[#7b5900]"
-                        : "border-gray-300 bg-gray-50 text-gray-500"
-                    }`}
-                  >
-                    {v.statut === "actif" ? "Disponible" : "Inactif"}
-                  </span>
-                  <p className="text-lg font-semibold text-dash-dark">
-                    {v.prix_jour}
-                    <span className="text-sm font-normal text-dash-text-secondary"> DH/j</span>
-                  </p>
-                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 sm:border-t-0 sm:pt-0 sm:justify-end gap-3 shrink-0">
+                  <div className="text-left sm:text-right">
+                    <p className="text-base font-extrabold text-dash-dark">
+                      {v.prix_jour}
+                      <span className="text-xs font-normal text-dash-text-secondary"> DH/j</span>
+                    </p>
+                  </div>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link
-                    href={`/proprietaire/bloquer?vehicule=${v.id}`}
-                    title="Enregistrer une location pour ce véhicule"
-                    className="flex items-center gap-1.5 rounded-lg bg-dash-accent px-3 py-2 text-sm font-bold text-dash-text shadow-sm transition hover:brightness-95"
-                  >
-                    <FilePlus2 size={14} strokeWidth={2.5} />
-                    <span className="hidden lg:inline">Nouvelle location</span>
-                  </Link>
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}`}
-                    className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark"
-                  >
-                    Voir
-                  </Link>
-                  <Link
-                    href={`/proprietaire/vehicules/${v.id}/modifier`}
-                    className="hidden rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:border-dash-dark/30 hover:bg-gray-50 hover:text-dash-dark sm:block"
-                  >
-                    Modifier
-                  </Link>
-                  <MenuActionsVehicule vehiculeId={v.id} statut={v.statut} />
+                  <div className="flex items-center gap-2">
+                    {/* Bouton direct de restitution si le véhicule est en cours de location */}
+                    {(stOp === "livree" || stOp === "en_retard") && (
+                      <button
+                        type="button"
+                        onClick={() => setVehiculeModalRetour(v)}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-700"
+                        title="Marquer le véhicule comme retourné (Restitution)"
+                      >
+                        <RotateCcw size={13} strokeWidth={2.5} />
+                        <span>Retour</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setVehiculeModalStatut(v)}
+                      className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-dash-dark transition hover:bg-gray-100"
+                    >
+                      État
+                    </button>
+                    <Link
+                      href={`/proprietaire/bloquer?vehicule=${v.id}`}
+                      title="Enregistrer une location pour ce véhicule"
+                      className="flex items-center gap-1.5 rounded-lg bg-dash-accent px-3 py-2 text-xs font-bold text-dash-text shadow-xs transition hover:brightness-95"
+                    >
+                      <FilePlus2 size={14} strokeWidth={2.5} />
+                      <span className="hidden md:inline">Location</span>
+                    </Link>
+                    <Link
+                      href={`/proprietaire/vehicules/${v.id}`}
+                      className="rounded-lg border border-dash-border px-3 py-2 text-xs font-semibold text-dash-text-secondary transition hover:bg-gray-50 hover:text-dash-dark"
+                    >
+                      Voir
+                    </Link>
+                    <MenuActionsVehicule vehiculeId={v.id} statut={v.statut} />
+                  </div>
                 </div>
               </div>
             );

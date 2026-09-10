@@ -36,6 +36,7 @@ export type DonneesContrat = {
   heureFin?: string | null;
   lieuFin?: string | null;
   prixTotal: number | null;
+  montantPaye?: number | null;
   photos: { bytes: Uint8Array; type: "image/jpeg" | "image/png" }[];
   genereLe: Date;
 };
@@ -158,7 +159,11 @@ export async function construireContratPdf(
   const avecHeure = (dateIso: string, heure?: string | null) =>
     heure ? `${formaterDate(dateIso)} a ${formaterHeure(heure)}` : formaterDate(dateIso);
 
-  section("Location", [
+  const total = d.prixTotal ?? 0;
+  const paye = d.montantPaye ?? 0;
+  const solde = Math.max(0, total - paye);
+
+  section("Location & Reglement", [
     ["Prise en charge", avecHeure(d.dateDebut, d.heureDebut)],
     ...(d.lieuDebut ? ([["Lieu de depart", d.lieuDebut]] as [string, string][]) : []),
     ["Restitution", avecHeure(d.dateFin, d.heureFin)],
@@ -169,6 +174,11 @@ export async function construireContratPdf(
       d.prixTotal != null
         ? `${d.prixTotal.toLocaleString("fr-FR")} MAD`
         : "A convenir",
+    ],
+    ["Avance versee (acompte)", `${paye.toLocaleString("fr-FR")} MAD`],
+    [
+      "Solde restant a regler",
+      solde > 0 ? `${solde.toLocaleString("fr-FR")} MAD` : "0 MAD (Paye en totalite)",
     ],
   ]);
 

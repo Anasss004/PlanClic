@@ -9,6 +9,7 @@ import {
   ArrowRight,
   FileWarning,
   FilePlus2,
+  ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { resoudreProprietaireId } from "@/lib/impersonation";
@@ -17,6 +18,7 @@ import StatCard from "@/components/ui/StatCard";
 import EmptyState from "@/components/ui/EmptyState";
 import Badge from "@/components/ui/Badge";
 import ChecklistOnboarding from "@/components/proprietaire/ChecklistOnboarding";
+import OperationsDuJour, { OperationItem } from "@/components/proprietaire/OperationsDuJour";
 
 // Somme des prix_total des réservations terminées dont created_at
 // tombe dans le mois indiqué (0 = mois courant, -1 = mois précédent).
@@ -86,6 +88,81 @@ export default async function DashboardProprietairePage() {
       ? Math.round(((caMoisActuel - caMoisPrecedent) / caMoisPrecedent) * 100)
       : null;
 
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+
+  // Requête pour les opérations du jour (départs, retours, retards)
+  const { data: reservationsOperations } = await supabase
+    .from("reservations")
+    .select(`
+      id,
+      vehicule_id,
+      date_debut,
+      date_fin,
+      heure_debut,
+      heure_fin,
+      lieu_debut,
+      lieu_fin,
+      statut,
+      source,
+      nom_client_manuel,
+      telephone_client_manuel,
+      prix_total,
+      montant_paye,
+      vehicules(id, marque, modele, immatriculation, kilometrage_actuel),
+      profiles(prenom, nom, telephone)
+    `)
+    .eq("proprietaire_id", pid)
+    .eq("statut", "confirmee");
+
+  const ops = reservationsOperations ?? [];
+
+  const mapItem = (r: (typeof ops)[number]): OperationItem => {
+    const vehicule = Array.isArray(r.vehicules) ? r.vehicules[0] : r.vehicules;
+    const profil = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+
+    const nomClient =
+      r.source === "manuel"
+        ? r.nom_client_manuel || "Client hors-ligne"
+        : profil
+        ? `${profil.prenom ?? ""} ${profil.nom ?? ""}`.trim() || "Client PlanClic"
+        : "Client";
+
+    const telephoneClient =
+      r.source === "manuel"
+        ? r.telephone_client_manuel
+        : profil?.telephone ?? null;
+
+    return {
+      id: r.id,
+      vehiculeId: r.vehicule_id || vehicule?.id || null,
+      kilometrageDepart: vehicule?.kilometrage_actuel ?? null,
+      dateDebut: r.date_debut,
+      dateFin: r.date_fin,
+      heureDebut: r.heure_debut,
+      heureFin: r.heure_fin,
+      lieuDebut: r.lieu_debut,
+      lieuFin: r.lieu_fin,
+      statut: r.statut,
+      source: r.source,
+      nomClient,
+      telephoneClient,
+      marqueVehicule: vehicule?.marque ?? "Véhicule",
+      modeleVehicule: vehicule?.modele ?? "",
+      immatriculationVehicule: vehicule?.immatriculation ?? null,
+      prixTotal: r.prix_total,
+      montantPaye: r.montant_paye,
+    };
+  };
+
+  const departsDuJour = ops.filter((r) => r.date_debut === aujourdhui).map(mapItem);
+  const retoursDuJour = ops.filter((r) => r.date_fin === aujourdhui).map(mapItem);
+  const retardsDuJour = ops.filter((r) => r.date_fin < aujourdhui).map(mapItem);
+
+  // Nombre de locations actives sur la route aujourd'hui (cautions en cours)
+  const nbLocationsActives = ops.filter(
+    (r) => r.date_debut <= aujourdhui && r.date_fin >= aujourdhui
+  ).length;
+
   const dansTrenteJours = new Date();
   dansTrenteJours.setDate(dansTrenteJours.getDate() + 30);
 
@@ -114,7 +191,7 @@ export default async function DashboardProprietairePage() {
     .select("id, date_debut, date_fin, vehicules(marque, modele), profiles(prenom, nom)")
     .eq("proprietaire_id", pid)
     .eq("statut", "confirmee")
-    .gte("date_debut", new Date().toISOString().slice(0, 10))
+    .gte("date_debut", aujourdhui)
     .order("date_debut", { ascending: true })
     .limit(5);
 
@@ -122,18 +199,18 @@ export default async function DashboardProprietairePage() {
     (nbVehicules ?? 0) === 0 && nbReservationsTotal === 0;
 
   return (
-    <div className="font-[family-name:var(--font-jakarta)]">
-      <div className="mb-6">
+    <div className="font-[family-name:var(--font-jakarta)] space-y-8">
+      <div>
         <h1 className="text-[32px] font-bold tracking-tight text-dash-dark">
           Tableau de bord
         </h1>
         <p className="mt-1 text-sm text-dash-text-secondary">
-          Vue d&apos;ensemble de votre activité sur PlanClic.
+          Vue d&apos;ensemble et centre d&apos;opérations de votre agence.
         </p>
       </div>
 
       {/* Accroche principale — enregistrer une location reçue hors ligne */}
-      <div className="mb-8 flex flex-col gap-4 rounded-2xl border border-dash-accent/40 bg-dash-accent/10 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-dash-accent/40 bg-dash-accent/10 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-base font-bold text-dash-dark">
             Une location reçue par téléphone, Instagram ou en agence ?
@@ -158,8 +235,8 @@ export default async function DashboardProprietairePage() {
         premiereLocation={nbReservationsTotal > 0}
       />
 
-      {/* Cartes statistiques */}
-      <div className="grid gap-6 sm:grid-cols-3">
+      {/* Cartes statistiques principales */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Wallet}
           label="Revenus (MAD)"
@@ -175,10 +252,17 @@ export default async function DashboardProprietairePage() {
           }
         />
         <StatCard
+          icon={ShieldCheck}
+          label="Cautions en cours"
+          value={nbLocationsActives}
+          variant="gold"
+          hint="Vehicules actuellement en circulation"
+        />
+        <StatCard
           icon={Clock}
           label="Demandes en attente"
           value={nbEnAttente ?? 0}
-          variant="gold"
+          variant="red"
         />
         <StatCard
           icon={Car}
@@ -188,16 +272,25 @@ export default async function DashboardProprietairePage() {
         />
       </div>
 
+      {/* Centre d'opérations du jour (départs / retours / retards) */}
+      {!aucuneActivite && (
+        <OperationsDuJour
+          departs={departsDuJour}
+          retours={retoursDuJour}
+          retards={retardsDuJour}
+        />
+      )}
+
       {/* Alertes d'expiration */}
       {documentsAlerte && documentsAlerte.length > 0 && (
-        <div className="mt-6 rounded-xl border border-[#feca5e] bg-[#fff8e8] p-4">
+        <div className="rounded-xl border border-[#feca5e] bg-[#fff8e8] p-4">
           <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#755400]">
             <FileWarning size={16} strokeWidth={1.75} />
             {documentsAlerte.length} document(s) à renouveler bientôt
           </p>
           <ul className="space-y-1 text-sm text-[#755400]">
             {documentsAlerte.slice(0, 5).map((d) => {
-              const expire = d.date_expiration < new Date().toISOString().slice(0, 10);
+              const expire = d.date_expiration < aujourdhui;
               return (
                 <li key={d.id}>
                   <Link
@@ -216,7 +309,7 @@ export default async function DashboardProprietairePage() {
       )}
 
       {/* Actions rapides */}
-      <div className="mt-8">
+      <div>
         <h2 className="mb-3 text-sm font-semibold text-dash-dark">Actions rapides</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <ActionRapide
@@ -239,7 +332,7 @@ export default async function DashboardProprietairePage() {
       </div>
 
       {aucuneActivite ? (
-        <div className="mt-8">
+        <div>
           <EmptyState
             icon={ClipboardList}
             title="Aucune activité pour l'instant"
@@ -266,7 +359,7 @@ export default async function DashboardProprietairePage() {
           />
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-[rgba(193,199,203,0.3)] bg-white p-5 shadow-[0px_4px_10px_rgba(43,76,91,0.05)]">
             <h2 className="mb-4 text-sm font-semibold text-dash-dark">Activité récente</h2>
             {!reservationsRecentes || reservationsRecentes.length === 0 ? (
@@ -357,17 +450,19 @@ function ActionRapide({
   return (
     <Link
       href={href}
-      className={`group flex items-center justify-between gap-2.5 rounded-lg border px-4 py-3 text-sm font-semibold shadow-[0px_4px_10px_rgba(43,76,91,0.05)] transition ${
+      className={`card-lift group flex items-center justify-between gap-2.5 rounded-xl border px-4 py-3.5 text-xs font-bold transition-all ${
         primary
-          ? "border-dash-accent bg-dash-accent/20 text-dash-dark hover:brightness-95"
-          : "border-dash-border bg-white font-medium text-dash-text-secondary hover:border-dash-dark/30 hover:text-dash-dark"
+          ? "border-dash-accent/80 bg-dash-accent/20 text-dash-dark hover:brightness-95 shadow-2xs"
+          : "border-slate-200 bg-white text-dash-dark hover:border-dash-dark/40 shadow-2xs"
       }`}
     >
       <span className="flex items-center gap-2.5">
-        <Icon size={16} strokeWidth={1.75} />
+        <Icon size={16} strokeWidth={2} className="text-dash-dark" />
         {label}
       </span>
-      <ArrowRight size={14} strokeWidth={1.75} className="opacity-0 transition group-hover:opacity-100" />
+      <ArrowRight size={14} strokeWidth={2} className="opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
     </Link>
   );
 }
+
+

@@ -22,6 +22,8 @@ import { getImpersonation } from "@/lib/impersonation";
 import NavLink from "@/components/proprietaire/NavLink";
 import MobileDrawer from "@/components/proprietaire/MobileDrawer";
 import BanniereImpersonation from "@/components/proprietaire/BanniereImpersonation";
+import CommandPalette from "@/components/proprietaire/CommandPalette";
+import HeaderProprietaire from "@/components/proprietaire/HeaderProprietaire";
 
 const NAV = [
   { href: "/proprietaire/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -197,6 +199,9 @@ export default async function ProprietaireLayout({
 
   return (
     <div className="flex min-h-screen bg-[#f4f5f6] font-[family-name:var(--font-jakarta)]">
+      {/* Palette de commande Cmd+K universelle */}
+      <CommandPalette />
+
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col justify-between bg-dash-sidebar px-8 py-8 lg:flex">
         {contenuSidebar}
@@ -209,6 +214,12 @@ export default async function ProprietaireLayout({
 
       {/* Contenu */}
       <div className="flex-1 lg:pl-64">
+        {/* Header principal avec barre de recherche rapide */}
+        <HeaderProprietaire
+          nomAgence={proprietaire.nom_entreprise}
+          badgeNotifs={badgeNotifs}
+        />
+
         {impersonation && (
           <BanniereImpersonation nomAgence={impersonation.nomAgence} />
         )}
@@ -237,3 +248,4 @@ export default async function ProprietaireLayout({
     </div>
   );
 }
+

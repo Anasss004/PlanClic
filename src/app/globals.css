@@ -14,7 +14,7 @@
   --color-dash-sidebar: #2b4c5b;
   --color-dash-accent: #f7c358;
   --color-dash-muted: #9abccd;
-  --color-dash-border: #c1c7cb;
+  --color-dash-border: #e2e8f0;
   --color-dash-text: #1a1c1d;
   --color-dash-text-secondary: #42484b;
 }
@@ -44,8 +44,51 @@ body {
   color: var(--foreground);
 }
 
-/* Respecte les préférences d'accessibilité de l'utilisateur :
-   toutes les animations/transitions sont quasi instantanées. */
+/* Scrollbar personnalisée moderne */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations & Élévations UI */
+.card-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(18, 53, 68, 0.08), 0 4px 12px -2px rgba(18, 53, 68, 0.04);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.pulse-badge {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Respecte les préférences d'accessibilité de l'utilisateur */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -57,7 +100,7 @@ body {
   }
 }
 
-/* Lien de nav avec soulignement animé au hover, sans changer la mise en page */
+/* Lien de nav avec soulignement animé au hover */
 .nav-underline {
   position: relative;
 }

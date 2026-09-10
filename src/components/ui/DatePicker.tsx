@@ -31,6 +31,8 @@ export default function DatePicker({
   value,
   onChange,
   min,
+  datesDesactivees = [],
+  estDateDesactivee,
   required,
   placeholder = "jj/mm/aaaa",
   theme = "brand",
@@ -41,6 +43,8 @@ export default function DatePicker({
   value?: string;
   onChange?: (iso: string) => void;
   min?: string;
+  datesDesactivees?: string[];
+  estDateDesactivee?: (iso: string) => boolean;
   required?: boolean;
   placeholder?: string;
   theme?: keyof typeof THEMES;
@@ -75,7 +79,6 @@ export default function DatePicker({
   }, [ouvert]);
 
   // Ferme si on clique en dehors (bouton ou panneau), ou si on scroll/resize
-  // pour éviter un panneau mal positionné.
   useEffect(() => {
     function fermerSiExterieur(e: MouseEvent) {
       const cible = e.target as Node;
@@ -176,18 +179,32 @@ export default function DatePicker({
               {cases.map((jour, i) => {
                 if (jour === null) return <span key={i} />;
                 const dateIso = iso(jour);
-                const estDesactive = !!min && dateIso < min;
+                const estPasse = !!min && dateIso < min;
+                const estOccupee =
+                  datesDesactivees.includes(dateIso) ||
+                  (estDateDesactivee ? estDateDesactivee(dateIso) : false);
+                const estDesactive = estPasse || estOccupee;
                 const estSelectionne = dateIso === valeur;
+
                 return (
                   <button
                     type="button"
                     key={i}
                     disabled={estDesactive}
                     onClick={() => definir(dateIso)}
+                    title={
+                      estOccupee
+                        ? "Date déjà réservée pour ce véhicule"
+                        : estPasse
+                        ? "Date passée ou antérieure au début"
+                        : undefined
+                    }
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-xs transition ${
                       estSelectionne
                         ? c.actif
-                        : estDesactive
+                        : estOccupee
+                        ? "cursor-not-allowed bg-rose-50 text-rose-300 line-through"
+                        : estPasse
                         ? "cursor-not-allowed text-gray-300"
                         : `text-gray-700 ${c.hover}`
                     }`}
@@ -197,6 +214,13 @@ export default function DatePicker({
                 );
               })}
             </div>
+
+            {datesDesactivees.length > 0 && (
+              <div className="mt-3 flex items-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-gray-400">
+                <span className="h-2 w-2 rounded-full bg-rose-300" />
+                <span>Dates barrées = déjà réservées</span>
+              </div>
+            )}
           </div>,
           document.body
         )}

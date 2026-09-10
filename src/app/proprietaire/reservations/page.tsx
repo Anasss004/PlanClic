@@ -28,7 +28,7 @@ export default async function ReservationsPage({
   const { data: reservations } = await supabase
     .from("reservations")
     .select(
-      "id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, statut, prix_total, source, nom_client_manuel, telephone_client_manuel, contrat_url, photos_etat_vehicule, created_at, vehicules(marque, modele, carburant, transmission, photos), profiles(prenom, nom, telephone)"
+      "id, vehicule_id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, statut, prix_total, montant_paye, source, nom_client_manuel, telephone_client_manuel, contrat_url, photos_etat_vehicule, created_at, vehicules(id, marque, modele, immatriculation, kilometrage_actuel, carburant, transmission, photos), profiles(prenom, nom, telephone)"
     )
     .eq("proprietaire_id", pid)
     .order("created_at", { ascending: false });

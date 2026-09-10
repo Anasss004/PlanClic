@@ -8,6 +8,10 @@ const ERREURS: Record<string, string> = {
   creation:
     "La location n'a pas pu être enregistrée. Vérifie les dates (chevauchement possible avec une réservation existante).",
   "champs-manquants": "Merci de renseigner le véhicule, les dates et le nom du client.",
+  "vehicule-maintenance":
+    "Ce véhicule est actuellement en maintenance ou au garage. Veuillez d'abord le remettre en statut Disponible pour pouvoir le réserver.",
+  "dates-chevauchement":
+    "Ce véhicule possède déjà une réservation confirmée sur cette période. Veuillez choisir d'autres dates.",
 };
 
 export default async function NouvelleLocationPage({
@@ -22,12 +26,20 @@ export default async function NouvelleLocationPage({
   } = await supabase.auth.getUser();
   const { id: pid } = await resoudreProprietaireId(user!.id);
 
+  // Récupère les véhicules avec leur statut opérationnel
   const { data: vehicules } = await supabase
     .from("vehicules")
-    .select("id, marque, modele, ville, prix_jour")
+    .select("id, marque, modele, immatriculation, ville, prix_jour, statut_operationnel")
     .eq("proprietaire_id", pid)
     .is("deleted_at", null)
     .order("marque", { ascending: true });
+
+  // Récupère les réservations actives pour bloquer les dates déjà réservées
+  const { data: reservationsExistantes } = await supabase
+    .from("reservations")
+    .select("vehicule_id, date_debut, date_fin, statut")
+    .eq("proprietaire_id", pid)
+    .in("statut", ["confirmee", "en_attente"]);
 
   return (
     <div className="mx-auto max-w-2xl font-[family-name:var(--font-jakarta)]">
@@ -42,7 +54,7 @@ export default async function NouvelleLocationPage({
       </p>
 
       {sp.erreur && (
-        <p className="mb-4 rounded-lg bg-rose-50 px-4 py-2.5 text-sm text-rose-700">
+        <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-2xs">
           {ERREURS[sp.erreur] ?? "Une erreur est survenue. Réessaie."}
         </p>
       )}
@@ -56,6 +68,7 @@ export default async function NouvelleLocationPage({
       ) : (
         <FormulaireNouvelleLocation
           vehicules={vehicules}
+          reservationsExistantes={reservationsExistantes ?? []}
           vehiculePreselectionne={sp.vehicule}
         />
       )}

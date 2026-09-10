@@ -594,6 +594,8 @@ export async function creerLocationManuelle(formData: FormData) {
   const cinClient = ((formData.get("cin_client") as string) || "").trim() || null;
   const prixRaw = (formData.get("prix_total") as string) || "";
   const prixTotal = prixRaw ? Number(prixRaw) : null;
+  const montantPayeRaw = (formData.get("montant_paye") as string) || "";
+  const montantPaye = montantPayeRaw ? Number(montantPayeRaw) : 0;
 
   const heureDebut = ((formData.get("heure_debut") as string) || "").trim() || null;
   const lieuDebut = ((formData.get("lieu_debut") as string) || "").trim() || null;
@@ -602,6 +604,30 @@ export async function creerLocationManuelle(formData: FormData) {
 
   if (!vehiculeId || !dateDebut || !dateFin || !nomClient) {
     redirect("/proprietaire/bloquer?erreur=champs-manquants");
+  }
+
+  // 1. Vérification que le véhicule n'est pas en maintenance
+  const { data: vehiculeCheck } = await supabase
+    .from("vehicules")
+    .select("statut_operationnel")
+    .eq("id", vehiculeId)
+    .single();
+
+  if (vehiculeCheck?.statut_operationnel === "maintenance") {
+    redirect("/proprietaire/bloquer?erreur=vehicule-maintenance");
+  }
+
+  // 2. Vérification stricte anti-chevauchement de dates
+  const { data: conflits } = await supabase
+    .from("reservations")
+    .select("id")
+    .eq("vehicule_id", vehiculeId)
+    .in("statut", ["confirmee", "en_attente"])
+    .lte("date_debut", dateFin)
+    .gte("date_fin", dateDebut);
+
+  if (conflits && conflits.length > 0) {
+    redirect("/proprietaire/bloquer?erreur=dates-chevauchement");
   }
 
   // Upload des photos d'état des lieux dans le bucket privé
@@ -635,6 +661,7 @@ export async function creerLocationManuelle(formData: FormData) {
       p_lieu_debut: lieuDebut,
       p_heure_fin: heureFin,
       p_lieu_fin: lieuFin,
+      p_montant_paye: montantPaye,
     }
   );
 
@@ -672,7 +699,7 @@ async function genererContratLocation(reservationId: string) {
   const { data: r } = await supabase
     .from("reservations")
     .select(
-      "id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, prix_total, nom_client_manuel, telephone_client_manuel, cin_client_manuel, photos_etat_vehicule, proprietaire_id, source, vehicules(marque, modele, immatriculation)"
+      "id, date_debut, date_fin, heure_debut, lieu_debut, heure_fin, lieu_fin, prix_total, montant_paye, nom_client_manuel, telephone_client_manuel, cin_client_manuel, photos_etat_vehicule, proprietaire_id, source, vehicules(marque, modele, immatriculation)"
     )
     .eq("id", reservationId)
     .single();
@@ -717,6 +744,7 @@ async function genererContratLocation(reservationId: string) {
     heureFin: r.heure_fin ?? null,
     lieuFin: r.lieu_fin ?? null,
     prixTotal: r.prix_total ?? null,
+    montantPaye: r.montant_paye ?? 0,
     photos,
     genereLe: new Date(),
   });
@@ -813,3 +841,138 @@ export async function obtenirLienContrat(reservationId: string) {
 
   return signe.signedUrl;
 }
+
+// ------------------------------------------------------------
+// Enregistrer ou mettre à jour le paiement d'une réservation (Avance / Total)
+// ------------------------------------------------------------
+export async function enregistrerPaiement(reservationId: string, montantPaye: number) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("enregistrer_paiement_location", {
+    p_reservation_id: reservationId,
+    p_montant_paye: montantPaye,
+  });
+
+  if (error) {
+    throw new Error("Action impossible : " + error.message);
+  }
+
+  revalidatePath("/proprietaire/reservations");
+  revalidatePath("/proprietaire/dashboard");
+  revalidatePath("/proprietaire/calendrier");
+}
+
+// ------------------------------------------------------------
+// Changer le statut opérationnel d'un véhicule (Disponible, Livrée, Maintenance)
+// ------------------------------------------------------------
+export async function changerStatutOperationnelVehicule(
+  vehiculeId: string,
+  statut: string,
+  kilometrage?: number
+) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("changer_statut_operationnel_vehicule", {
+    p_vehicule_id: vehiculeId,
+    p_statut: statut,
+    p_kilometrage: kilometrage ?? null,
+  });
+
+  if (error) {
+    throw new Error("Action impossible : " + error.message);
+  }
+
+  revalidatePath("/proprietaire/vehicules");
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
+  revalidatePath("/proprietaire/dashboard");
+  revalidatePath("/proprietaire/calendrier");
+}
+
+// ------------------------------------------------------------
+// Enregistrer la restitution / retour d'un véhicule
+// ------------------------------------------------------------
+export async function enregistrerRetourVehicule({
+  vehiculeId,
+  reservationId,
+  kilometrageRetour,
+  niveauCarburant,
+  soldeRegle = false,
+  cautionRestituee = true,
+  statutApresRetour = "disponible",
+}: {
+  vehiculeId: string;
+  reservationId?: string | null;
+  kilometrageRetour?: number | null;
+  niveauCarburant?: string | null;
+  soldeRegle?: boolean;
+  cautionRestituee?: boolean;
+  statutApresRetour?: "disponible" | "maintenance";
+}) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Non authentifié");
+
+  // Tentative via RPC dédiée
+  const { error: rpcError } = await supabase.rpc("enregistrer_retour_vehicule", {
+    p_vehicule_id: vehiculeId,
+    p_reservation_id: reservationId ?? null,
+    p_kilometrage_retour: kilometrageRetour ?? null,
+    p_niveau_carburant: niveauCarburant ?? null,
+    p_solde_regle: soldeRegle,
+    p_caution_restituee: cautionRestituee,
+    p_statut_apres_retour: statutApresRetour,
+  });
+
+  // Fallback si la migration SQL n'est pas encore exécutée
+  if (rpcError) {
+    const updateVehicule: Record<string, unknown> = {
+      statut_operationnel: statutApresRetour,
+    };
+    if (kilometrageRetour) {
+      updateVehicule.kilometrage_actuel = kilometrageRetour;
+    }
+
+    await supabase
+      .from("vehicules")
+      .update(updateVehicule)
+      .eq("id", vehiculeId)
+      .eq("proprietaire_id", user.id);
+
+    if (reservationId) {
+      const updateRes: Record<string, unknown> = {
+        statut: "terminee",
+      };
+
+      if (soldeRegle) {
+        const { data: resData } = await supabase
+          .from("reservations")
+          .select("prix_total")
+          .eq("id", reservationId)
+          .single();
+
+        if (resData?.prix_total) {
+          updateRes.montant_paye = resData.prix_total;
+        }
+      }
+
+      await supabase
+        .from("reservations")
+        .update(updateRes)
+        .eq("id", reservationId)
+        .eq("proprietaire_id", user.id);
+    }
+  }
+
+  revalidatePath("/proprietaire/dashboard");
+  revalidatePath("/proprietaire/vehicules");
+  revalidatePath("/proprietaire/reservations");
+  revalidatePath("/proprietaire/calendrier");
+  revalidatePath(`/proprietaire/vehicules/${vehiculeId}`);
+}
+
+
+
