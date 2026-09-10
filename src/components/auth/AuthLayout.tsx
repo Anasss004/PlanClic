@@ -36,7 +36,7 @@ export default function AuthLayout({
       </div>
 
       {/* Formulaire */}
-      <div className="flex items-center justify-center bg-white px-6 py-12">
+      <div className="flex items-center justify-center bg-white px-6 py-12 max-sm:px-4 max-sm:py-8">
         <div className="w-full max-w-sm">
           <Link
             href="/"

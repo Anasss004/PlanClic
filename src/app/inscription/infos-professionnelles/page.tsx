@@ -25,7 +25,7 @@ export default async function InfosProfessionnellesPage({
   const { whatsapp_admin } = await getParametresPlateforme();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-12">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-12 max-sm:px-4 max-sm:py-8">
       <p className="mb-1 font-[family-name:var(--font-bagel)] text-2xl text-brand-dark">
         Une dernière étape
       </p>
@@ -66,7 +66,7 @@ export default async function InfosProfessionnellesPage({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">
               Ville

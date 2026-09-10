@@ -46,7 +46,7 @@ export default async function ProfilPage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10 max-sm:px-4 max-sm:py-6">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
             Mon profil

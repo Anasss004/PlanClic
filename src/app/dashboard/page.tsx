@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     .single();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 text-center max-sm:p-6">
       <h1 className="text-2xl font-bold mb-4">Mon compte</h1>
       {profile ? (
         <div className="space-y-2">

@@ -3,7 +3,7 @@ import DatePicker from "@/components/ui/DatePicker";
 
 export default function InfosPersonnelles({ profile }: { profile: any }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04)] max-sm:p-4">
       <h2 className="mb-4 text-sm font-semibold text-gray-900">
         Informations personnelles
       </h2>
