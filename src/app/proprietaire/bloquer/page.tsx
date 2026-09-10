@@ -5,8 +5,12 @@ import EmptyState from "@/components/ui/EmptyState";
 import FormulaireNouvelleLocation from "@/components/proprietaire/FormulaireNouvelleLocation";
 
 const ERREURS: Record<string, string> = {
+  // Ce libellé accusait un chevauchement de dates quel que soit le motif
+  // réel de l'échec, alors que le vrai cas de chevauchement a sa propre
+  // entrée ci-dessous ("dates-chevauchement"). Il envoyait donc sur une
+  // fausse piste à chaque incident.
   creation:
-    "La location n'a pas pu être enregistrée. Vérifie les dates (chevauchement possible avec une réservation existante).",
+    "La location n'a pas pu être enregistrée. Réessaie ; si le problème persiste, contacte le support.",
   "champs-manquants": "Merci de renseigner le véhicule, les dates et le nom du client.",
   "vehicule-maintenance":
     "Ce véhicule est actuellement en maintenance ou au garage. Veuillez d'abord le remettre en statut Disponible pour pouvoir le réserver.",
