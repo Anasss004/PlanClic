@@ -78,16 +78,16 @@ export default function ConfirmProvider({ children }: { children: React.ReactNod
               <p className="mb-5 text-sm text-dash-text-secondary">{options.message}</p>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 max-sm:flex-col-reverse max-sm:items-stretch">
               <button
                 onClick={() => repondre(false)}
-                className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:bg-gray-50"
+                className="rounded-lg border border-dash-border px-4 py-2 text-sm font-medium text-dash-text-secondary transition hover:bg-gray-50 max-sm:py-3"
               >
                 {options.labelAnnuler ?? "Annuler"}
               </button>
               <button
                 onClick={() => repondre(true)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition max-sm:py-3 ${
                   options.danger
                     ? "bg-rose-600 hover:bg-rose-700"
                     : "bg-dash-sidebar hover:opacity-90"

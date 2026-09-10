@@ -96,7 +96,7 @@ export default function ModalRetourVehicule({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-2xl">
         {/* En-tête */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-6 py-4 max-sm:px-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-sm shadow-emerald-200">
               <CheckCircle2 size={20} strokeWidth={2.5} />
@@ -129,7 +129,7 @@ export default function ModalRetourVehicule({
         </div>
 
         {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto max-sm:p-4 max-sm:max-h-[85vh]">
           {/* 1. Kilométrage au retour */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -173,7 +173,7 @@ export default function ModalRetourVehicule({
               Niveau de carburant au retour
             </label>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2 max-sm:gap-1">
               {NIVEAUX_CARBURANT.map((nc) => {
                 const actif = carburant === nc.value;
                 return (
@@ -181,13 +181,13 @@ export default function ModalRetourVehicule({
                     key={nc.value}
                     type="button"
                     onClick={() => setCarburant(nc.value)}
-                    className={`flex flex-col items-center justify-center rounded-2xl border p-2.5 transition-all text-center ${
+                    className={`flex flex-col items-center justify-center rounded-2xl border p-2.5 transition-all text-center max-sm:p-1.5 ${
                       actif
                         ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10"
                         : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100 hover:border-slate-300"
                     }`}
                   >
-                    <span className="text-xs font-bold">{nc.label}</span>
+                    <span className="text-xs font-bold max-sm:text-[9px] max-sm:leading-tight">{nc.label}</span>
                     <span
                       className={`mt-1 h-1.5 w-6 rounded-full ${
                         actif ? "bg-white" : nc.color
@@ -280,7 +280,7 @@ export default function ModalRetourVehicule({
             <label className="block text-xs font-bold text-slate-800 mb-2">
               Statut du véhicule après cette restitution :
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
               <button
                 type="button"
                 onClick={() => setStatutApres("disponible")}
@@ -332,18 +332,18 @@ export default function ModalRetourVehicule({
           </div>
 
           {/* Boutons d'action */}
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4 max-sm:flex-col-reverse max-sm:items-stretch">
             <button
               type="button"
               onClick={onFermer}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs max-sm:py-3"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-50 max-sm:justify-center max-sm:py-3"
             >
               <CheckCircle2 size={15} strokeWidth={2.5} />
               {isPending ? "Enregistrement en cours..." : "Valider la restitution"}

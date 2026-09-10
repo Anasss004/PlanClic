@@ -60,7 +60,7 @@ export default function ModalPaiement({
         onClick={(e) => e.stopPropagation()}
       >
         {/* En-tête de la modal */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 max-sm:px-4">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-dash-accent/20 text-dash-dark">
               <Wallet size={18} strokeWidth={2} />
@@ -83,7 +83,7 @@ export default function ModalPaiement({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-sm:p-4 max-sm:max-h-[80vh] max-sm:overflow-y-auto">
           {erreur && (
             <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
               <AlertCircle size={15} className="shrink-0" />
@@ -92,7 +92,7 @@ export default function ModalPaiement({
           )}
 
           {/* Synthèse du paiement */}
-          <div className="grid grid-cols-3 gap-2 rounded-xl bg-gray-50 p-3 text-center border border-gray-100">
+          <div className="grid grid-cols-3 gap-2 rounded-xl bg-gray-50 p-3 text-center border border-gray-100 max-sm:gap-1 max-sm:p-2">
             <div>
               <p className="text-[11px] uppercase tracking-wide text-dash-text-secondary font-medium">Prix total</p>
               <p className="mt-0.5 text-sm font-bold text-dash-dark">{prixTotal.toLocaleString("fr-FR")} MAD</p>
@@ -182,18 +182,18 @@ export default function ModalPaiement({
           </div>
 
           {/* Boutons d'action */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100 max-sm:flex-col-reverse max-sm:items-stretch">
             <button
               type="button"
               onClick={onFermer}
-              className="rounded-lg border border-dash-border px-4 py-2 text-xs font-semibold text-dash-text-secondary hover:bg-gray-50"
+              className="rounded-lg border border-dash-border px-4 py-2 text-xs font-semibold text-dash-text-secondary hover:bg-gray-50 max-sm:py-3"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-2 rounded-lg bg-dash-dark px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-dash-dark/90 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-dash-dark px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-dash-dark/90 disabled:opacity-50 max-sm:justify-center max-sm:py-3"
             >
               {isPending && <RefreshCw size={13} className="animate-spin" />}
               Enregistrer le paiement
