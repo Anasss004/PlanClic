@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ProfileMenu from "@/components/ProfileMenu";
 import HeaderShell from "@/components/HeaderShell";
+import MenuMobilePublic from "@/components/MenuMobilePublic";
 
 const NAV_LINKS = [
   { label: "News", href: "/news" },
@@ -30,10 +31,10 @@ export default async function Header() {
 
   return (
     <HeaderShell>
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-4 max-sm:px-4">
         <Link
           href="/"
-          className="font-[family-name:var(--font-bagel)] text-[28px] text-brand-dark"
+          className="font-[family-name:var(--font-bagel)] text-[28px] text-brand-dark max-sm:text-[22px]"
         >
           PlanClic
         </Link>
@@ -50,7 +51,7 @@ export default async function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 max-sm:gap-2">
           <button
             type="button"
             aria-label="Localisation"
@@ -64,11 +65,13 @@ export default async function Header() {
           ) : (
             <Link
               href="/connexion"
-              className="rounded-full bg-brand-accent px-5 py-1.5 text-sm font-semibold text-brand-dark transition-all duration-200 hover:brightness-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/30"
+              className="rounded-full bg-brand-accent px-5 py-1.5 text-sm font-semibold text-brand-dark transition-all duration-200 hover:brightness-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark/30 max-sm:px-4"
             >
               Se connecter
             </Link>
           )}
+
+          <MenuMobilePublic liens={NAV_LINKS} connecte={!!profile} />
         </div>
       </div>
     </HeaderShell>
