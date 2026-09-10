@@ -33,9 +33,9 @@ export default async function NouveauVehiculePage({
 
       <form
         action={ajouterVehicule}
-        className="space-y-4 rounded-2xl border border-black/5 bg-white p-6 shadow-sm"
+        className="space-y-4 rounded-2xl border border-black/5 bg-white p-6 shadow-sm max-sm:p-4"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Type</label>
             <select name="type" required className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-brand-dark">
@@ -60,7 +60,7 @@ export default async function NouveauVehiculePage({
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Marque</label>
             <input name="marque" required className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900" />
@@ -71,7 +71,7 @@ export default async function NouveauVehiculePage({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 max-sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Portes</label>
             <input name="portes" type="number" min={0} className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900" />
@@ -86,7 +86,7 @@ export default async function NouveauVehiculePage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Carburant</label>
             <select name="carburant" className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-brand-dark">
@@ -105,7 +105,7 @@ export default async function NouveauVehiculePage({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-sm font-semibold text-brand-dark">Immatriculation</label>
             <ImmatriculationInput />
@@ -120,7 +120,7 @@ export default async function NouveauVehiculePage({
           <p className="mb-3 text-sm font-semibold text-brand-dark">
             Conditions de location (optionnel)
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 max-sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs text-[#6a6a6a]">Km/jour inclus</label>
               <input name="km_inclus_jour" type="number" min={0} className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm text-gray-900" />
