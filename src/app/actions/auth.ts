@@ -67,7 +67,13 @@ export async function seConnecter(formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  // signInWithPassword renvoie déjà l'utilisateur authentifié dans data.user :
+  // le auth.getUser() qui suivait refaisait un aller-retour réseau vers le
+  // serveur Auth pour obtenir exactement la même valeur.
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     if (error.message.toLowerCase().includes("email not confirmed")) {
@@ -80,14 +86,10 @@ export async function seConnecter(formData: FormData) {
   // gestion, le client reste sur la page d'accueil (son profil est
   // accessible depuis le menu du header, pas un dashboard séparé) —
   // sauf s'il venait d'un parcours précis (ex: réservation en cours).
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user!.id)
+    .eq("id", data.user!.id)
     .single();
 
   if (profile?.role === "proprietaire") {
