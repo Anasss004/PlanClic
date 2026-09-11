@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useRef, useEffect } from "react";
+import { useMemo, useState, useTransition, useRef } from "react";
 import Image from "next/image";
 import {
   Car,
@@ -39,6 +39,7 @@ import {
 } from "@/app/actions/proprietaire";
 import { redirigerFenetre } from "@/lib/fenetre";
 import { useToast } from "@/components/ui/Toast";
+import PanneauFlottant from "@/components/ui/PanneauFlottant";
 
 export type ReservationListe = {
   id: string;
@@ -709,23 +710,10 @@ function ContactWhatsAppDropdown({
   lieuDebut?: string | null;
 }) {
   const [ouvert, setOuvert] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function ext(e: MouseEvent) {
-      if (
-        ref.current &&
-        !ref.current.contains(e.target as Node)
-      ) {
-        setOuvert(false);
-      }
-    }
-
-    document.addEventListener("mousedown", ext);
-
-    return () =>
-      document.removeEventListener("mousedown", ext);
-  }, []);
+  // Ancre le panneau sur le bouton lui-même : le panneau étant rendu dans un
+  // portail, il n'est plus un descendant de ce conteneur. La fermeture au clic
+  // extérieur est prise en charge par PanneauFlottant.
+  const ref = useRef<HTMLButtonElement>(null);
 
   const periode = formaterPeriode(
     dateDebut,
@@ -761,8 +749,9 @@ function ContactWhatsAppDropdown({
   ];
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={ref}
         type="button"
         onClick={() => setOuvert((v) => !v)}
         className="flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-2xs transition hover:bg-emerald-700"
@@ -785,8 +774,13 @@ function ContactWhatsAppDropdown({
         />
       </button>
 
-      {ouvert && (
-        <div className="absolute bottom-full right-0 z-30 mb-1.5 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl">
+      <PanneauFlottant
+        ouvert={ouvert}
+        ancreRef={ref}
+        onFermer={() => setOuvert(false)}
+        className="w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl"
+      >
+        <div>
           <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Modèles rapides
           </div>
@@ -807,7 +801,7 @@ function ContactWhatsAppDropdown({
             </a>
           ))}
         </div>
-      )}
+      </PanneauFlottant>
     </div>
   );
 }
@@ -828,25 +822,12 @@ function ContratMenuCompact({
 
   const [ouvert, setOuvert] = useState(false);
 
-  const ref = useRef<HTMLDivElement>(null);
+  // Ancre le panneau sur le bouton : rendu dans un portail, il n'est plus un
+  // descendant de ce conteneur. La fermeture au clic extérieur, au défilement
+  // et à Échap est prise en charge par PanneauFlottant.
+  const ref = useRef<HTMLButtonElement>(null);
 
   const toast = useToast();
-
-  useEffect(() => {
-    function ext(e: MouseEvent) {
-      if (
-        ref.current &&
-        !ref.current.contains(e.target as Node)
-      ) {
-        setOuvert(false);
-      }
-    }
-
-    document.addEventListener("mousedown", ext);
-
-    return () =>
-      document.removeEventListener("mousedown", ext);
-  }, []);
 
   function voir() {
     setOuvert(false);
@@ -939,8 +920,9 @@ function ContratMenuCompact({
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative">
       <button
+        ref={ref}
         type="button"
         onClick={() => setOuvert((v) => !v)}
         className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
@@ -963,8 +945,13 @@ function ContratMenuCompact({
         />
       </button>
 
-      {ouvert && (
-        <div className="absolute bottom-full right-0 z-30 mb-1.5 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl">
+      <PanneauFlottant
+        ouvert={ouvert}
+        ancreRef={ref}
+        onFermer={() => setOuvert(false)}
+        className="w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl"
+      >
+        <div>
           <button
             type="button"
             onClick={voir}
@@ -995,7 +982,7 @@ function ContratMenuCompact({
             Regénérer le PDF
           </button>
         </div>
-      )}
+      </PanneauFlottant>
     </div>
   );
 }
