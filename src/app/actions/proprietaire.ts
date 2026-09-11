@@ -224,19 +224,38 @@ export async function signalerAmende(formData: FormData) {
   if (!user) redirect("/connexion");
 
   const date_amende = formData.get("date_amende") as string;
-  const numero_immatriculation = formData.get("numero_immatriculation") as string;
+  const vehicule_id = formData.get("vehicule_id") as string;
 
-  // Trouve le véhicule du propriétaire avec cette immatriculation
+  // Client de secours, saisi à la main quand aucune réservation ne couvre la
+  // date. Les deux champs sont facultatifs : ils ne doivent jamais empêcher
+  // l'enregistrement de l'amende.
+  const nomClientManuel =
+    ((formData.get("nom_client_manuel") as string) || "").trim() || null;
+  const telephoneClientManuel =
+    ((formData.get("telephone_client_manuel") as string) || "").trim() || null;
+
+  if (!vehicule_id || !date_amende) {
+    redirect("/proprietaire/amendes?erreur=champs-manquants");
+  }
+
+  // Le véhicule est désormais choisi dans une liste, mais on revérifie qu'il
+  // appartient bien au propriétaire : le navigateur ne fait pas autorité, et
+  // le formulaire pourrait être rejoué avec un autre identifiant.
   const { data: vehicule } = await supabase
     .from("vehicules")
-    .select("id")
+    .select("id, immatriculation")
     .eq("proprietaire_id", user.id)
-    .eq("immatriculation", numero_immatriculation)
+    .eq("id", vehicule_id)
+    .is("deleted_at", null)
     .single();
 
   if (!vehicule) {
     redirect("/proprietaire/amendes?erreur=vehicule-introuvable");
   }
+
+  // numero_immatriculation est NOT NULL en base et sert à l'affichage de la
+  // liste. Il est maintenant dérivé du véhicule au lieu d'être saisi.
+  const numero_immatriculation = vehicule!.immatriculation ?? "—";
 
   // Trouve la réservation (confirmée ou déjà terminée — une amende
   // arrive souvent après la fin de la location) qui couvrait cette date.
@@ -260,6 +279,11 @@ export async function signalerAmende(formData: FormData) {
     reservation_id: reservation?.id ?? null,
     date_amende,
     numero_immatriculation,
+    // Le secours n'est retenu que si aucune réservation n'a été trouvée :
+    // sinon le locataire se lit via la réservation, et garder les deux
+    // ouvrirait la porte à des informations contradictoires.
+    nom_client_manuel: reservation ? null : nomClientManuel,
+    telephone_client_manuel: reservation ? null : telephoneClientManuel,
   });
 
   if (error) {
