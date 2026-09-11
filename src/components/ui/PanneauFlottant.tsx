@@ -27,12 +27,20 @@ export default function PanneauFlottant({
   ancreRef,
   onFermer,
   className = "",
+  placement = "haut",
+  alignement = "droite",
   children,
 }: {
   ouvert: boolean;
   ancreRef: React.RefObject<HTMLElement | null>;
   onFermer: () => void;
   className?: string;
+  /** Côté d'ouverture privilégié. Bascule automatiquement s'il manque la
+   *  place, pour que le panneau reste toujours entièrement visible. */
+  placement?: "haut" | "bas";
+  /** Bord aligné sur le déclencheur. "etire" fait correspondre la largeur du
+   *  panneau à celle du déclencheur (cas d'un champ de formulaire). */
+  alignement?: "droite" | "gauche" | "etire";
   children: React.ReactNode;
 }) {
   const panneauRef = useRef<HTMLDivElement>(null);
@@ -40,6 +48,7 @@ export default function PanneauFlottant({
     left: number;
     top?: number;
     bottom?: number;
+    largeur?: number;
   } | null>(null);
 
   // Le panneau est d'abord rendu invisible, mesuré, puis positionné. En
@@ -56,25 +65,32 @@ export default function PanneauFlottant({
     const a = ancre.getBoundingClientRect();
     const p = panneau.getBoundingClientRect();
 
-    // Aligné à droite sur le déclencheur, comme le `right-0` d'origine,
-    // puis borné pour ne jamais sortir de l'écran (utile en mobile).
+    const largeur = alignement === "etire" ? a.width : p.width;
+
+    // Bord aligné sur le déclencheur, puis borné pour ne jamais sortir de
+    // l'écran (utile en mobile).
+    const brut = alignement === "droite" ? a.right - largeur : a.left;
     const left = Math.max(
       8,
-      Math.min(a.right - p.width, window.innerWidth - p.width - 8)
+      Math.min(brut, window.innerWidth - largeur - 8)
     );
 
-    // Ouverture vers le haut par défaut — comportement d'origine
-    // (`bottom-full mb-1.5`). On bascule vers le bas seulement s'il n'y a pas
-    // la place au-dessus, pour que le panneau reste toujours entièrement
+    // On respecte le placement demandé tant qu'il y a la place, et on bascule
+    // de l'autre côté sinon — le panneau reste ainsi toujours entièrement
     // visible.
     const placeAuDessus = a.top - 6 - p.height >= 8;
+    const placeEnDessous = a.bottom + 6 + p.height <= window.innerHeight - 8;
+    const versLeHaut =
+      placement === "haut" ? placeAuDessus || !placeEnDessous : !placeEnDessous && placeAuDessus;
 
-    setPosition(
-      placeAuDessus
-        ? { left, bottom: window.innerHeight - a.top + 6 }
-        : { left, top: a.bottom + 6 }
-    );
-  }, [ouvert, ancreRef]);
+    setPosition({
+      left,
+      largeur: alignement === "etire" ? a.width : undefined,
+      ...(versLeHaut
+        ? { bottom: window.innerHeight - a.top + 6 }
+        : { top: a.bottom + 6 }),
+    });
+  }, [ouvert, ancreRef, placement, alignement]);
 
   // Fermeture au clic extérieur. Le panneau vivant désormais hors de la
   // hiérarchie du déclencheur, il faut tester les deux éléments — sans quoi
@@ -123,6 +139,7 @@ export default function PanneauFlottant({
         left: position?.left ?? 0,
         top: position?.top,
         bottom: position?.bottom,
+        width: position?.largeur,
         visibility: position ? "visible" : "hidden",
       }}
       className={`z-50 ${className}`}
